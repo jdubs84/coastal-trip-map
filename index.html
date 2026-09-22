@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:poi-thumbs-20260921 -->
+<html lang="en"><!-- build:pins-above-roads-20260921 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -325,6 +325,8 @@
 
 .food-poi-icon{z-index:700 !important}
 .food-poi-icon div{position:relative;z-index:701;background-clip:padding-box}
+.sight-poi-icon{z-index:720 !important; background:transparent !important; border:none !important}
+.sight-poi-icon .poi-pin{position:relative;z-index:721;background-clip:padding-box}
 
   /* T-minus countdown */
   .tminus {
@@ -1795,6 +1797,10 @@ map.getPane('roadlabels').style.zIndex = 650;
 map.getPane('roadlabels').style.pointerEvents = 'none';
 map.createPane('foodpins');
 map.getPane('foodpins').style.zIndex = 700;
+map.createPane('sightpins');
+map.getPane('sightpins').style.zIndex = 720;
+map.createPane('stoppins');
+map.getPane('stoppins').style.zIndex = 740;
 const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'Tiles © Esri', maxZoom:18 });
 const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution:'Labels © Esri', maxZoom:18, opacity:0.9, pane:'roadlabels' });
 const roads = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { attribution:'Roads © Esri', maxZoom:18, opacity:1, pane:'roadlabels' });
@@ -1825,7 +1831,7 @@ homeMarker.bindPopup(`<div class="popup"><h3>Home</h3><p>Depart Sep 27</p></div>
 const markers = [];
 stops.forEach((s, i) => {
   const icon = L.divIcon({ className:'', html:`<div class="pin">${i+1}</div>`, iconSize:[36,36], iconAnchor:[18,18] });
-  const m = L.marker([s.lat, s.lon], { icon, zIndexOffset: 1000 }).addTo(map);
+  const m = L.marker([s.lat, s.lon], { icon, pane: 'stoppins', zIndexOffset: 1000, riseOnHover: true }).addTo(map);
   m.bindPopup(`<div class="popup"><h3>${s.short}</h3><p><b>${s.date_range}</b><br/>${s.place}<br/>${s.note || ''}</p></div>`, { maxWidth: 240, autoPanPaddingTopLeft: L.point(24, 72), autoPanPaddingBottomRight: L.point(24, 120) });
   markers.push(m);
 });
@@ -1913,6 +1919,8 @@ const poiCluster = L.markerClusterGroup({
   spiderfyOnEveryZoom: false,
   spiderfyOnMaxZoom: true,
   zoomToBoundsOnClick: false, // spiderfy in place — don't zoom the map
+  pane: 'sightpins',
+  clusterPane: 'sightpins',
   spiderLegPolylineOptions: { weight: 1.5, color: '#9b59d0', opacity: 0.85 },
   iconCreateFunction: function(cluster) {
     const n = cluster.getChildCount();
@@ -1925,8 +1933,8 @@ const poiCluster = L.markerClusterGroup({
   }
 });
 pois.forEach((p) => {
-  const icon = L.divIcon({ className:'', html:`<div class="poi-pin"><img src="${p.icon}" alt=""/></div>`, iconSize:[24,24], iconAnchor:[12,12] });
-  const m = L.marker([p.lat, p.lon], { icon, zIndexOffset: -100 });
+  const icon = L.divIcon({ className:'sight-poi-icon', html:`<div class="poi-pin"><img src="${p.icon}" alt=""/></div>`, iconSize:[24,24], iconAnchor:[12,12] });
+  const m = L.marker([p.lat, p.lon], { icon, pane: 'sightpins', zIndexOffset: 900, riseOnHover: true });
   m.bindPopup(`<div class="popup"><h3><img src="${p.icon}" alt="" style="width:22px;height:22px;border-radius:50%;vertical-align:-5px;margin-right:6px;object-fit:cover"/>${p.name}</h3><p>${p.why}</p><p class="off-route">${p.offRouteLabel || ''}</p></div>`);
   poiMarkers.push(m);
   poiCluster.addLayer(m);
