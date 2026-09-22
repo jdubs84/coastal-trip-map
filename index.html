@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:pins-above-roads-20260921 -->
+<html lang="en"><!-- build:roads-under-pins-20260921b -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -327,6 +327,11 @@
 .food-poi-icon div{position:relative;z-index:701;background-clip:padding-box}
 .sight-poi-icon{z-index:720 !important; background:transparent !important; border:none !important}
 .sight-poi-icon .poi-pin{position:relative;z-index:721;background-clip:padding-box}
+.leaflet-roadlabels-pane{z-index:450 !important}
+.leaflet-sightpins-pane{z-index:720 !important}
+.leaflet-foodpins-pane{z-index:700 !important}
+.leaflet-stoppins-pane{z-index:740 !important}
+.leaflet-marker-pane{z-index:600 !important}
 
   /* T-minus countdown */
   .tminus {
@@ -1793,7 +1798,7 @@ map.createPane('route');
 map.getPane('route').style.zIndex = 350;
 map.getPane('route').style.pointerEvents = 'none';
 map.createPane('roadlabels');
-map.getPane('roadlabels').style.zIndex = 650;
+map.getPane('roadlabels').style.zIndex = 450; // under all pins (was 650 — covered sight icons)
 map.getPane('roadlabels').style.pointerEvents = 'none';
 map.createPane('foodpins');
 map.getPane('foodpins').style.zIndex = 700;
@@ -1862,6 +1867,45 @@ stops.forEach((s, i) => {
   });
 })();
 
+// Keep sight photo pins from sitting under highway paint (A1A etc.)
+(function nudgePoisOffRoute() {
+  if (typeof driveLatLngs === 'undefined' || !driveLatLngs || !driveLatLngs.length) return;
+  if (typeof pois === 'undefined') return;
+  function havMi(lat1, lon1, lat2, lon2){
+    const R=3958.8, toR=Math.PI/180;
+    const dLat=(lat2-lat1)*toR, dLon=(lon2-lon1)*toR;
+    const la1=lat1*toR, la2=lat2*toR;
+    const h=Math.sin(dLat/2)**2+Math.cos(la1)*Math.cos(la2)*Math.sin(dLon/2)**2;
+    return 2*R*Math.asin(Math.min(1,Math.sqrt(h)));
+  }
+  function nearestOnRoute(lat, lon){
+    let best={d:Infinity, lat, lon, bearing:0};
+    for (let i=0;i<driveLatLngs.length-1;i++){
+      const A=driveLatLngs[i], B=driveLatLngs[i+1];
+      const ay=+A[0], ax=+A[1], by=+B[0], bx=+B[1];
+      const vx=bx-ax, vy=by-ay;
+      const len2=vx*vx+vy*vy || 1e-12;
+      let t=((lon-ax)*vx+(lat-ay)*vy)/len2; t=Math.max(0,Math.min(1,t));
+      const qx=ax+t*vx, qy=ay+t*vy;
+      const d=havMi(lat, lon, qy, qx);
+      if (d<best.d){
+        best={d, lat:qy, lon:qx, bearing:Math.atan2(vx, vy)};
+      }
+    }
+    return best;
+  }
+  pois.forEach((p, idx) => {
+    const n=nearestOnRoute(p.lat, p.lon);
+    if (n.d > 0.2) return; // already clear of the drive line
+    const side = (idx % 2 === 0) ? 1 : -1;
+    const perp = n.bearing + Math.PI/2;
+    const deg = 0.35 / 69; // ~0.35 mi off the road
+    p.lat = p.lat + Math.cos(perp) * deg * side;
+    p.lon = p.lon + Math.sin(perp) * deg * side / Math.max(0.4, Math.cos(p.lat*Math.PI/180));
+    p._routeNudged = true;
+  });
+})();
+
 /* Distance from a lat/lon to the driving route polyline (miles) */
 function haversineMi(lat1, lon1, lat2, lon2) {
   const R = 3958.7613;
@@ -1921,6 +1965,7 @@ const poiCluster = L.markerClusterGroup({
   zoomToBoundsOnClick: false, // spiderfy in place — don't zoom the map
   pane: 'sightpins',
   clusterPane: 'sightpins',
+  disableClusteringAtZoom: 11,
   spiderLegPolylineOptions: { weight: 1.5, color: '#9b59d0', opacity: 0.85 },
   iconCreateFunction: function(cluster) {
     const n = cluster.getChildCount();
