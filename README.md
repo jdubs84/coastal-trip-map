@@ -20,7 +20,13 @@ No street price is invented. OpenStreetMap does not publish live pump prices. Ga
 
 ### Optional station-price API
 
-If you have a backend that can see a real price feed, point the map at it. In `index.html`, set `STATION_PRICE_API` (search for that name), or in the browser you use for the trip:
+The default `STATION_PRICE_API` in `index.html` is the here2serve Worker proxy (GasBuddy unofficial):
+
+`https://gas-here2serve.here2serve-gas.workers.dev`
+
+`gas.here2serve.us` will replace that URL once the Cloudflare zone is attached.
+
+To point the map at a different backend, change `STATION_PRICE_API` in `index.html`, or in the browser you use for the trip:
 
 ```js
 localStorage.setItem("coastalGasPriceApi", "https://your-host.example/gas");
