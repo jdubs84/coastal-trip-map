@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:roads-under-pins-20260921b -->
+<html lang="en"><!-- build:yearling-poi-20260922 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -1452,6 +1452,7 @@ html, body {
     <label title="Buc-ee's"><input type="checkbox" id="chkBucees"> <span class="sw" style="background:#d4af37"></span> Buc-ee's</label>
     <label title="Cook Out"><input type="checkbox" id="chkCookout"> <span class="sw" style="background:#e67e22"></span> Cook Out</label>
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
+    <label title="Restaurants"><input type="checkbox" id="chkRestaurants" checked> <span class="sw" style="background:#16a085"></span> Restaurants</label>
   </div>
   <div class="timeline">
   <div class="stop home-stop" data-home="1">
@@ -2359,6 +2360,13 @@ const FOOD_POIS = [
     "lat": 35.1058,
     "lon": -77.08083,
     "note": "2500 Dr MLK Jr Blvd"
+  },
+  {
+    "brand": "restaurant",
+    "name": "The Yearling Restaurant",
+    "lat": 29.486034,
+    "lon": -82.163847,
+    "note": "14531 E County Road 325, Hawthorne FL (Cross Creek) · classic Cracker cuisine stop on Home→Anastasia"
   }
 ];
 attachRouteDistances(FOOD_POIS);
@@ -2368,12 +2376,14 @@ attachRouteDistances(FOOD_POIS);
   const brandLayers = {
     bucees: L.layerGroup(),
     cookout: L.layerGroup(),
-    wawa: L.layerGroup()
+    wawa: L.layerGroup(),
+    restaurant: L.layerGroup()
   };
   const brandStyle = {
     bucees: { color:'#d4af37', label:"Buc-ee's" },
     cookout: { color:'#e67e22', label:'Cook Out' },
-    wawa: { color:'#c0392b', label:'Wawa' }
+    wawa: { color:'#c0392b', label:'Wawa' },
+    restaurant: { color:'#16a085', label:'The Yearling' }
   };
   window.__foodMarkers = [];
   
@@ -2419,9 +2429,10 @@ attachRouteDistances(FOOD_POIS);
 
 FOOD_POIS.forEach(p => {
     const st = brandStyle[p.brand] || { color:'#888', label:p.name };
+    const chip = (p.brand === 'restaurant') ? (p.name || st.label) : st.label;
     const icon = L.divIcon({
       className: 'food-poi-icon',
-      html: `<div style="background:${st.color};color:#111;border:1px solid #000;border-radius:8px;padding:2px 6px;font:700 10px/1.2 system-ui,sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.45)">${st.label}</div>`,
+      html: `<div style="background:${st.color};color:#111;border:1px solid #000;border-radius:8px;padding:2px 6px;font:700 10px/1.2 system-ui,sans-serif;white-space:nowrap;box-shadow:0 1px 4px rgba(0,0,0,.45)">${chip}</div>`,
       iconSize: [72, 18],
       iconAnchor: [36, 9]
     });
@@ -2457,12 +2468,14 @@ FOOD_POIS.forEach(p => {
     const b = !!document.getElementById('chkBucees')?.checked;
     const c = !!document.getElementById('chkCookout')?.checked;
     const w = !!document.getElementById('chkWawa')?.checked;
+    const r = !!document.getElementById('chkRestaurants')?.checked;
     syncSights(s);
     sync('bucees', b); setOn('chkBucees', b);
     sync('cookout', c); setOn('chkCookout', c);
     sync('wawa', w); setOn('chkWawa', w);
+    sync('restaurant', r); setOn('chkRestaurants', r);
   }
-  ['chkSights','chkBucees','chkCookout','chkWawa'].forEach(id => {
+  ['chkSights','chkBucees','chkCookout','chkWawa','chkRestaurants'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', apply);
   });
   apply();
@@ -2484,7 +2497,7 @@ FOOD_POIS.forEach(p => {
     }
     // turn on the brand layer so the pin is visible
     const brand = p.brand;
-    const idMap = { bucees: 'chkBucees', cookout: 'chkCookout', wawa: 'chkWawa' };
+    const idMap = { bucees: 'chkBucees', cookout: 'chkCookout', wawa: 'chkWawa', restaurant: 'chkRestaurants' };
     const chk = document.getElementById(idMap[brand]);
     if (chk && !chk.checked) {
       chk.checked = true;
