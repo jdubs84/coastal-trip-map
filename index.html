@@ -2716,11 +2716,10 @@ FOOD_POIS.forEach(p => {
   const refreshBtn = document.getElementById('btnGasRefresh');
   if (!chk || !note || typeof map === 'undefined' || typeof L === 'undefined' || !driveLatLngs || driveLatLngs.length < 2) return;
 
-  // Default station-price feed: here2serve Worker proxy (GasBuddy unofficial).
-  // gas.here2serve.us will replace this once the Cloudflare zone is attached.
+  // Default station-price feed: Cloudflare Worker on here2serve.us (GasBuddy unofficial).
   // GET {url}?bbox=minLon,minLat,maxLon,maxLat&grade=regular
   // → { stations: [{ name, lat, lon, regular, midgrade, updated, source, city, state, address }] }
-  const STATION_PRICE_API = "https://gas-here2serve.here2serve-gas.workers.dev";
+  const STATION_PRICE_API = "https://gas.here2serve.us";
   const CACHE_KEY = "coastal-gas-osm-v1";
   const CACHE_MS = 12 * 60 * 60 * 1000;
   const STEP_MI = 30;
