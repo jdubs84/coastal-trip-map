@@ -1587,7 +1587,7 @@ html, body {
   <button type="button" class="btn-locate" id="btnLocate" title="Show my live location" aria-label="Show my live location">◎</button>
   <div class="brand"><strong>Driving route on roads</strong><span>1028.4 miles · 22h 54m · Home → FL → NC</span></div>
 </div>
-<script src="gas-prices.js?v=4"></script>
+<script src="gas-prices.js?v=5"></script>
 <script>
 const home = {"lat": 27.911904, "lon": -82.817489, "address": "3007 Bluffs Drive, Largo, FL 33770"};
 const stops = [{"name": "1. Anastasia SP bungalows", "query": "Anastasia State Park, St. Augustine, FL", "lat": 29.8675, "lon": -81.271, "start": "2026-09-27", "end": "2026-09-29", "note": "2 nights", "short": "Anastasia SP bungalows", "place": "Anastasia State Park, St. Augustine, FL", "date_range": "Sep 27 – Sep 29", "drive_in": "4h 19m · 212.5 mi"}, {"name": "2. Edisto Beach SP cabins", "query": "Edisto Beach State Park, Edisto Island, SC", "lat": 32.505, "lon": -80.299, "start": "2026-09-29", "end": "2026-10-01", "note": "2 nights", "short": "Edisto Beach SP cabins", "place": "Edisto Beach State Park, Edisto Island, SC", "date_range": "Sep 29 – Oct 1", "drive_in": "5h 35m · 278.3 mi"}, {"name": "3. Clayton Cabin (Commander's Island)", "query": "Georgetown, South Carolina", "lat": 33.3768, "lon": -79.2945, "start": "2026-10-01", "end": "2026-10-04", "note": "3 nights · boat-access", "short": "Clayton Cabin (Commander's Island)", "place": "Georgetown, South Carolina", "date_range": "Oct 1 – Oct 4", "drive_in": "2h 34m · 106.3 mi"}, {"name": "4. Carolina Beach SP cabin", "query": "Carolina Beach State Park, Carolina Beach, NC", "lat": 34.036, "lon": -77.907, "start": "2026-10-04", "end": "2026-10-06", "note": "2 nights · bring linens", "short": "Carolina Beach SP cabin", "place": "Carolina Beach State Park, Carolina Beach, NC", "date_range": "Oct 4 – Oct 6", "drive_in": "2h 56m · 122.7 mi"}, {"name": "5. Hammocks Beach SP · Simmons cabin", "query": "Hammocks Beach State Park, Swansboro, NC", "lat": 34.687, "lon": -77.139, "start": "2026-10-06", "end": "2026-10-08", "note": "2 nights · bring linens", "short": "Hammocks Beach SP · Simmons cabin", "place": "Hammocks Beach State Park, Swansboro, NC", "date_range": "Oct 6 – Oct 8", "drive_in": "2h 05m · 81.4 mi"}, {"name": "6. Frisco Woods camping cabin", "query": "Frisco Woods Campground, Frisco, NC", "lat": 35.223, "lon": -75.635, "start": "2026-10-08", "end": "2026-10-10", "note": "2 nights · bring linens", "short": "Frisco Woods camping cabin", "place": "Frisco Woods Campground, Frisco, NC", "date_range": "Oct 8 – Oct 10", "drive_in": "5h 24m · 227.2 mi"}];
@@ -2984,6 +2984,8 @@ FOOD_POIS.forEach(p => {
   async function fetchPrices(signal) {
     const base = priceApiUrl();
     if (!base) return { stations: [], skipped: true };
+    // The 12h localStorage entry is OpenStreetMap locations only. Pump prices
+    // are not stored there, so every Gas-on and Refresh gas hits this feed.
     return CoastalPriceFeed.fetchTiledPrices(driveLatLngs, {
       base: base,
       signal: signal,
@@ -3227,16 +3229,20 @@ FOOD_POIS.forEach(p => {
     };
   }
 
+  function priceNote(summary) {
+    if (!summary) return "";
+    return CoastalPriceFeed.priceNoteLine(summary, {
+      checked: summary.loadedAt ? formatUpdated(summary.loadedAt) : "",
+      newest: summary.newest ? formatUpdated(summary.newest) : "",
+      oldest: summary.oldest ? formatUpdated(summary.oldest) : ""
+    });
+  }
+
   function finalNote(picked, extra, priceResult) {
     const summary = CoastalPriceFeed.priceUpdateSummary(priceResult, Date.now());
     const bits = [];
-    if (summary.ok) {
-      let bit = "Pump prices loaded " + formatUpdated(summary.loadedAt);
-      if (summary.newest) bit += " · newest report " + formatUpdated(summary.newest);
-      bits.push(bit);
-    } else if (summary.text) {
-      bits.push(summary.text);
-    }
+    const status = priceNote(summary);
+    if (status) bits.push(status);
     if (extra) bits.push(extra);
     bits.push(picked.length + (picked.length === 1 ? " station" : " stations") + " along the route");
     const regulars = picked.filter(s => s.displayGrade === "regular");
@@ -3246,7 +3252,6 @@ FOOD_POIS.forEach(p => {
     } else if (!summary.ok && !summary.text) {
       bits.push("street prices are not in a free browser feed — open a pin for GasBuddy");
     }
-    if (summary.ok && summary.text) bits.push(summary.text);
     if (usAvg && Number.isFinite(usAvg.regular)) {
       let avg = "US avg regular " + moneyAvg(usAvg.regular);
       if (Number.isFinite(usAvg.midgrade)) avg += " · mid " + moneyAvg(usAvg.midgrade);
@@ -3287,9 +3292,8 @@ FOOD_POIS.forEach(p => {
       priceResult = v;
       if (!alive() || !v || v.aborted) return v;
       paintPrices();
-      const early = CoastalPriceFeed.priceUpdateSummary(v, Date.now());
-      if (early.ok) note.textContent = "Pump prices loaded " + formatUpdated(early.loadedAt) + ".";
-      else if (early.text) note.textContent = early.text;
+      const status = priceNote(CoastalPriceFeed.priceUpdateSummary(v, Date.now()));
+      if (status) note.textContent = status;
       return v;
     });
 
@@ -3323,9 +3327,8 @@ FOOD_POIS.forEach(p => {
         if (priceResult && priceResult.stations && priceResult.stations.length) mergePrices(stationMap, priceResult.stations);
         let progress = "Loading fuel stops along the route (" + (i + 1) + " of " + chunks.length + ")…";
         if (priceResult) {
-          const early = CoastalPriceFeed.priceUpdateSummary(priceResult, Date.now());
-          if (early.ok) progress = "Pump prices loaded · " + progress;
-          else if (early.text) progress = early.text + " " + progress;
+          const status = priceNote(CoastalPriceFeed.priceUpdateSummary(priceResult, Date.now()));
+          if (status) progress = status + " · " + progress;
         }
         if (usAvg && Number.isFinite(usAvg.regular)) progress += " US avg regular " + moneyAvg(usAvg.regular) + ".";
         note.textContent = progress;

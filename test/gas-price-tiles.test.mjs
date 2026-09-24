@@ -237,11 +237,88 @@ assert.equal(blanks.ok, false);
 assert.equal(blanks.priced, 0);
 assert.match(blanks.text, /No pump prices came back/);
 
+function pageNormalize(s) {
+  const num = (v) => {
+    const n = typeof v === "string" ? parseFloat(v) : v;
+    if (!Number.isFinite(n) || n <= 0 || n > 12) return null;
+    return n;
+  };
+  if (!s || typeof s !== "object") return null;
+  const lat = +s.lat;
+  const lon = +s.lon;
+  const regular = num(s.regular != null ? s.regular : s.price);
+  const midgrade = num(s.midgrade);
+  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+  if (regular == null && midgrade == null) return null;
+  return { name: s.name, lat, lon, regular, midgrade, updated: s.updated || "" };
+}
+
+const packTile = await Feed.fetchTiledPrices([[27.9, -82.8], [28.1, -82.4]], {
+  base: "https://pack.here2serve.us/gas",
+  normalize: pageNormalize,
+  fetcher: async () => ({
+    stations: [
+      { name: "Shell", lat: 27.84321959749, lon: -82.79980993619, regular: 4.49, midgrade: 4.89, updated: "2026-09-23T22:15:46.913Z", source: "GasBuddy" },
+      { name: "Old", lat: 27.91, lon: -82.5, regular: 4.19, midgrade: 0, updated: "2026-09-22T12:00:00.000Z", source: "GasBuddy" },
+      { name: "Blank", lat: 27.95, lon: -82.2, regular: null, midgrade: null, updated: "2026-09-24T00:00:00Z" }
+    ],
+    meta: {
+      count: 2,
+      cache: "overlap-stale",
+      source: "GasBuddy cache (overlap)",
+      lastError: "HTTP Error 403: Forbidden"
+    }
+  })
+});
+assert.equal(packTile.stations.length, 2);
+assert.equal(packTile.stations.find(s => s.name === "Shell").regular, 4.49);
+assert.equal(packTile.stations.find(s => s.name === "Shell").updated, "2026-09-23T22:15:46.913Z");
+assert.equal(packTile.stations.find(s => s.name === "Old").midgrade, null);
+assert.equal(packTile.meta.stale, true);
+assert.equal(packTile.meta.caches.length, 1);
+assert.equal(packTile.meta.caches[0], "overlap-stale");
+assert.equal(packTile.meta.sources[0], "GasBuddy cache (overlap)");
+assert.match(packTile.meta.lastErrors[0], /403/);
+const staleSummary = Feed.priceUpdateSummary(packTile, Date.parse("2026-09-24T02:13:00Z"));
+assert.equal(staleSummary.ok, true);
+assert.equal(staleSummary.stale, true);
+assert.equal(staleSummary.priced, 2);
+assert.equal(staleSummary.newest, Date.parse("2026-09-23T22:15:46.913Z"));
+assert.equal(staleSummary.oldest, Date.parse("2026-09-22T12:00:00.000Z"));
+assert.match(staleSummary.text, /Pack cache overlap-stale/);
+assert.match(staleSummary.text, /GasBuddy cache \(overlap\)/);
+assert.match(staleSummary.text, /upstream HTTP Error 403: Forbidden/);
+const staleLine = Feed.priceNoteLine(staleSummary, {
+  checked: "Sep 24, 2:13 AM",
+  newest: "Sep 23, 10:15 PM",
+  oldest: "Sep 22, 12:00 PM"
+});
+assert.match(staleLine, /Pack cache overlap-stale/);
+assert.match(staleLine, /checked Sep 24, 2:13 AM/);
+assert.match(staleLine, /newest report Sep 23, 10:15 PM/);
+assert.match(staleLine, /oldest report Sep 22, 12:00 PM/);
+assert.doesNotMatch(staleLine, /Pump prices loaded/);
+const freshLine = Feed.priceNoteLine(
+  Feed.priceUpdateSummary({ stations: [{ regular: 3.5, updated: "2026-09-24T01:00:00Z" }], meta: { caches: [], sources: [], lastErrors: [], cellErrors: 0, stale: false } }, Date.parse("2026-09-24T02:00:00Z")),
+  { checked: "Sep 24, 2:00 AM", newest: "Sep 24, 1:00 AM", oldest: "Sep 24, 1:00 AM" }
+);
+assert.match(freshLine, /^Pump prices loaded Sep 24, 2:00 AM/);
+assert.doesNotMatch(freshLine, /oldest report/);
+
 assert.match(html, /const STATION_PRICE_API = "https:\/\/pack\.here2serve\.us\/gas"/);
 assert.match(html, /localStorage\.getItem\("coastalGasPriceApi"\)/);
 assert.match(html, /CoastalPriceFeed\.fetchTiledPrices/);
 assert.match(html, /CoastalPriceFeed\.priceUpdateSummary/);
+assert.match(html, /CoastalPriceFeed\.priceNoteLine/);
 assert.match(html, /cache:\s*"no-store"/);
+const gasFn = html.slice(html.indexOf("function setupGasLayer"));
+const startLoadAt = gasFn.indexOf("async function startLoad");
+const priceCallAt = gasFn.indexOf("fetchPrices(signal)", startLoadAt);
+const cacheReadAt = gasFn.indexOf("const cached = bypass", startLoadAt);
+assert.ok(priceCallAt > startLoadAt && priceCallAt < cacheReadAt, "price feed is requested even when OpenStreetMap locations are cached");
+const writeCacheFn = gasFn.slice(gasFn.indexOf("function writeCache"), gasFn.indexOf("async function fetchUsAvg"));
+assert.doesNotMatch(writeCacheFn, /regular/);
+assert.match(gasFn, /startLoad\(true\)/);
 assert.match(html, /src="gas-prices\.js\?v=/);
 assert.match(html, /id="chkRestaurants">/);
 assert.match(html, /id="chkGas">/);
@@ -249,7 +326,7 @@ assert.doesNotMatch(html, /id="chkRestaurants" checked/);
 assert.doesNotMatch(html, /id="chkGas" checked/);
 assert.match(html, /if \(chk\.checked\) startLoad\(false\)/);
 assert.match(html, /function paintPrices\(/);
-assert.match(html, /Pump prices loaded/);
+assert.match(html, /function priceNote\(/);
 assert.doesNotMatch(html, /const STATION_PRICE_API = "https:\/\/gas\.here2serve\.us"/);
 
 console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests, max in flight " + maxInflight + ")");

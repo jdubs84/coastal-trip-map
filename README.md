@@ -24,7 +24,7 @@ The default `STATION_PRICE_API` in `index.html` is `https://pack.here2serve.us/g
 
 The Florida → North Carolina drive is one box about 8° wide and 8.6° tall. The map does not send that box in one request. It walks the driving route and requests overlapping tiles of at most 1.2° on a side (`gas-prices.js`), a few tiles at a time. Sending every tile at once is rejected (HTTP 403), and then no pump price is attached. Stations that appear in more than one tile collapse to the newer price. Those prices are matched to nearby OpenStreetMap stations the same way as before. If a tile still fails, the note under Gas says so and does not claim the prices refreshed. Pins from OpenStreetMap stay up, and a missing price is left blank.
 
-Restaurant and Gas both start off. Nothing from those layers is requested until the box is ticked.
+Restaurant and Gas both start off. Nothing from those layers is requested until the box is ticked. Turning Gas on, and **Refresh gas**, both request the price feed again. OpenStreetMap locations can stay cached for 12 hours; pump prices are not part of that cache. The note under Gas repeats Pack's `meta` when the feed sends it (`cache`, `source`, `lastError`) and the newest and oldest station `updated` times. A stale GasBuddy cache still shows the dollar amounts Pack returned. It does not say those prices were refreshed just now.
 
 To point the map at a different backend, change `STATION_PRICE_API` in `index.html`, or in the browser you use for the trip:
 
