@@ -186,11 +186,80 @@
     return [];
   }
 
+  function classifyPriceError(message) {
+    var s = String(message || "");
+    if (/timed out|timeout/i.test(s)) return "Price feed timed out.";
+    var http = s.match(/HTTP\s+(\d{3})/);
+    if (http) return "Price feed HTTP " + http[1] + ".";
+    if (/empty response|invalid json|unexpected token|unexpected end/i.test(s)) return "Price feed returned an empty response.";
+    if (/network|failed to fetch|load failed/i.test(s)) return "Price feed failed — network error.";
+    return "Price feed failed — live pump prices did not load.";
+  }
+
   function priceFailureNote(result) {
     if (!result || result.skipped || result.aborted) return "";
     if (result.partial) return "Some live pump prices did not load.";
-    if (result.error) return "Price feed failed — live pump prices did not load.";
+    if (result.error) return classifyPriceError(result.error);
     return "";
+  }
+
+  function numPrice(v) {
+    var n = typeof v === "string" ? parseFloat(v) : v;
+    if (!Number.isFinite(n) || n <= 0 || n > 12) return null;
+    return n;
+  }
+
+  function normalizeWorkerStation(s) {
+    if (!s || typeof s !== "object") return null;
+    var lat = +s.lat;
+    var lon = +s.lon;
+    var regular = numPrice(s.regular != null ? s.regular : (s.price != null ? s.price : s.regularPrice));
+    var midgrade = numPrice(s.midgrade != null ? s.midgrade : s.midgradePrice);
+    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
+    if (regular == null && midgrade == null) return null;
+    return {
+      name: s.name || s.brand || "Fuel station",
+      brand: s.brand || "",
+      lat: lat,
+      lon: lon,
+      city: s.city || "",
+      state: s.state || "",
+      street: s.address || s.street || "",
+      regular: regular,
+      midgrade: midgrade,
+      updated: s.updated || s.postedTime || s.lastUpdated || "",
+      priceSource: s.source || "price feed"
+    };
+  }
+
+  function isDeadPackGasUrl(url) {
+    try {
+      var u = new URL(String(url));
+      return u.protocol === "https:" && u.hostname === "pack.here2serve.us" && /^\/gas\/?$/.test(u.pathname);
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function resolveStationPriceApi(saved, fallback) {
+    if (saved && /^https:\/\//i.test(String(saved)) && !isDeadPackGasUrl(saved)) return String(saved);
+    return fallback;
+  }
+
+  function gasLayerRequested(search, hash) {
+    var query = String(search || "");
+    var qIndex = query.indexOf("?");
+    if (qIndex >= 0) query = query.slice(qIndex + 1);
+    var gas = "";
+    try {
+      gas = new URLSearchParams(query).get("gas") || "";
+    } catch (e) {
+      gas = "";
+    }
+    if (gas === "1") return true;
+    var h = String(hash || "");
+    if (h.charAt(0) === "#") h = h.slice(1);
+    return h === "gas";
   }
 
   function hasPumpPrice(s) {
@@ -379,6 +448,11 @@
     combineTileResults: combineTileResults,
     priceUrl: priceUrl,
     priceFailureNote: priceFailureNote,
+    classifyPriceError: classifyPriceError,
+    normalizeWorkerStation: normalizeWorkerStation,
+    isDeadPackGasUrl: isDeadPackGasUrl,
+    resolveStationPriceApi: resolveStationPriceApi,
+    gasLayerRequested: gasLayerRequested,
     priceUpdateSummary: priceUpdateSummary,
     priceNoteLine: priceNoteLine,
     fetchTiledPrices: fetchTiledPrices
