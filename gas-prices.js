@@ -1,12 +1,12 @@
 /* Route-scoped gas price tiling.
    The Florida → North Carolina drive is one box about 8° × 8.6°.
-   Requests stay at or under 7° on a side so a proxy size cap cannot
-   reject the whole feed. Tiles overlap; duplicate stations collapse
-   to the newer price. */
+   Requests stay at or under 1.2° on a side. Boxes near 7° time out
+   or fail against the price feed, so pump prices never reach the pins.
+   Tiles overlap; duplicate stations collapse to the newer price. */
 (function (root) {
   "use strict";
 
-  var PRICE_MAX_SPAN = 7;
+  var PRICE_MAX_SPAN = 1.2;
   var PRICE_PAD = 0.3;
   var PRICE_OVERLAP = 0.35;
 

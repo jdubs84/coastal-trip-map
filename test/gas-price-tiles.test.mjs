@@ -37,12 +37,18 @@ const routeSpan = spans(routeBox);
 assert.ok(routeSpan.lat > 8, "fixture is the full coastal route (lat)");
 assert.ok(routeSpan.lon > 7.5, "fixture is the full coastal route (lon)");
 
+assert.equal(Feed.PRICE_MAX_SPAN, 1.2);
+assert.ok(Feed.PRICE_MAX_SPAN <= 1.5, "every price tile stays at or under 1.5°");
+const maxRequestSpan = Feed.PRICE_MAX_SPAN + 0.01;
+
 const tiles = Feed.boxesAlongRoute(drive);
-assert.ok(tiles.length >= 2, "full route is more than one price request");
+assert.ok(tiles.length > 2, "full route produces multiple small price tiles");
 tiles.forEach((box, i) => {
   const s = spans(box);
-  assert.ok(s.lon <= 7.01, "tile " + i + " lon " + s.lon);
-  assert.ok(s.lat <= 7.01, "tile " + i + " lat " + s.lat);
+  assert.ok(s.lon <= maxRequestSpan, "tile " + i + " lon " + s.lon);
+  assert.ok(s.lat <= maxRequestSpan, "tile " + i + " lat " + s.lat);
+  assert.ok(s.lon <= Feed.PRICE_MAX_SPAN + 1e-6, "tile " + i + " lon " + s.lon + " exceeds " + Feed.PRICE_MAX_SPAN);
+  assert.ok(s.lat <= Feed.PRICE_MAX_SPAN + 1e-6, "tile " + i + " lat " + s.lat + " exceeds " + Feed.PRICE_MAX_SPAN);
   assert.ok(s.lon < routeSpan.lon - 0.5 || s.lat < routeSpan.lat - 0.5, "tile " + i + " is not the full route box");
 });
 
@@ -79,7 +85,7 @@ const jump = Feed.boxesAlongRoute([[27.9, -82.8], [35.9, -75.5]]);
 assert.ok(jump.length >= 2);
 jump.forEach(box => {
   const s = spans(box);
-  assert.ok(s.lon <= 7.01 && s.lat <= 7.01);
+  assert.ok(s.lon <= maxRequestSpan && s.lat <= maxRequestSpan);
 });
 const midLat = (27.9 + 35.9) / 2;
 const midLon = (-82.8 + -75.5) / 2;
@@ -112,8 +118,8 @@ const loaded = await Feed.fetchTiledPrices(drive, {
   fetcher: async (url) => {
     calls.push(url);
     const bbox = new URL(url).searchParams.get("bbox").split(",").map(Number);
-    assert.ok(bbox[2] - bbox[0] <= 7.01);
-    assert.ok(bbox[3] - bbox[1] <= 7.01);
+    assert.ok(bbox[2] - bbox[0] <= maxRequestSpan);
+    assert.ok(bbox[3] - bbox[1] <= maxRequestSpan);
     return {
       stations: [
         { name: "Priced", lat: (bbox[1] + bbox[3]) / 2, lon: (bbox[0] + bbox[2]) / 2, regular: "3.459", updated: "2026-09-24T00:00:00Z" },
