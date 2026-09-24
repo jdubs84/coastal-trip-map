@@ -2,13 +2,18 @@
    The Florida → North Carolina drive is one box about 8° × 8.6°.
    Requests stay at or under 1.2° on a side. Boxes near 7° time out
    or fail against the price feed, so pump prices never reach the pins.
-   Tiles overlap; duplicate stations collapse to the newer price. */
+   Tiles overlap; duplicate stations collapse to the newer price.
+   Tiles are fetched a few at a time. Firing the whole route at once
+   (~46 requests) is answered HTTP 403, every tile fails, and the
+   pins stay blank. */
 (function (root) {
   "use strict";
 
   var PRICE_MAX_SPAN = 1.2;
   var PRICE_PAD = 0.3;
   var PRICE_OVERLAP = 0.35;
+  var PRICE_FETCH_CONCURRENCY = 4;
+  var PRICE_FETCH_RETRIES = 2;
 
   function splitAxis(min, max, maxSpan, overlap) {
     var span = max - min;
@@ -116,23 +121,56 @@
     return Array.from(map.values());
   }
 
+  function metaFromPayload(js) {
+    if (!js || !js.meta || typeof js.meta !== "object") return null;
+    return {
+      cache: js.meta.cache != null ? String(js.meta.cache) : "",
+      source: js.meta.source != null ? String(js.meta.source) : "",
+      lastError: js.meta.lastError != null ? String(js.meta.lastError) : "",
+      cellErrors: Number(js.meta.cellErrors) || 0
+    };
+  }
+
+  function summarizePriceMeta(metas) {
+    var caches = [];
+    var sources = [];
+    var errors = [];
+    var cellErrors = 0;
+    (metas || []).forEach(function (m) {
+      if (!m) return;
+      if (m.cache && caches.indexOf(m.cache) < 0) caches.push(m.cache);
+      if (m.source && sources.indexOf(m.source) < 0) sources.push(m.source);
+      if (m.lastError && errors.indexOf(m.lastError) < 0) errors.push(m.lastError);
+      cellErrors += Number(m.cellErrors) || 0;
+    });
+    return {
+      caches: caches,
+      sources: sources,
+      lastErrors: errors,
+      cellErrors: cellErrors,
+      stale: caches.some(function (c) { return /stale/i.test(c); })
+    };
+  }
+
   function combineTileResults(results) {
     var failed = results.filter(function (r) { return r && r.error; });
     var stations = dedupePriceStations(results.reduce(function (acc, r) {
       return acc.concat((r && r.stations) || []);
     }, []));
+    var meta = summarizePriceMeta(results.map(function (r) { return r && r.meta; }));
     if (!results.length || failed.length === results.length) {
       return {
         stations: [],
         error: (failed[0] && failed[0].error) || "Price feed failed",
         tiles: results.length,
-        failedTiles: failed.length
+        failedTiles: failed.length,
+        meta: meta
       };
     }
     if (failed.length) {
-      return { stations: stations, partial: true, tiles: results.length, failedTiles: failed.length };
+      return { stations: stations, partial: true, tiles: results.length, failedTiles: failed.length, meta: meta };
     }
-    return { stations: stations, tiles: results.length, failedTiles: 0 };
+    return { stations: stations, tiles: results.length, failedTiles: 0, meta: meta };
   }
 
   function priceUrl(base, box) {
@@ -155,24 +193,175 @@
     return "";
   }
 
+  function hasPumpPrice(s) {
+    if (!s) return false;
+    return Number(s.regular) > 0 || Number(s.midgrade) > 0;
+  }
+
+  function packMetaText(meta) {
+    if (!meta) return "";
+    var bits = [];
+    if (meta.caches && meta.caches.length) bits.push("Pack cache " + meta.caches.join(", "));
+    if (meta.sources && meta.sources.length) bits.push(meta.sources.join(", "));
+    if (meta.lastErrors && meta.lastErrors.length) bits.push("upstream " + meta.lastErrors[0]);
+    if (meta.cellErrors > 0) bits.push(meta.cellErrors + " cell errors");
+    return bits.join(" · ");
+  }
+
+  function priceUpdateSummary(result, loadedAt) {
+    if (!result) {
+      return {
+        ok: false,
+        stale: false,
+        partial: false,
+        priced: 0,
+        newest: null,
+        oldest: null,
+        loadedAt: null,
+        text: "Price feed failed — live pump prices did not load."
+      };
+    }
+    if (result.skipped || result.aborted) {
+      return { ok: false, stale: false, partial: false, priced: 0, newest: null, oldest: null, loadedAt: null, text: "" };
+    }
+    var failure = priceFailureNote(result);
+    var metaText = packMetaText(result.meta);
+    var stale = !!(result.meta && result.meta.stale);
+    var priced = (result.stations || []).filter(hasPumpPrice);
+    if (!priced.length) {
+      var failText = failure || "No pump prices came back for this route.";
+      if (metaText) failText += " · " + metaText;
+      return {
+        ok: false,
+        stale: stale,
+        partial: !!result.partial,
+        priced: 0,
+        newest: null,
+        oldest: null,
+        loadedAt: null,
+        text: failText
+      };
+    }
+    var newest = 0;
+    var oldest = 0;
+    priced.forEach(function (s) {
+      var t = Date.parse(s.updated || "");
+      if (!(t > 0)) return;
+      if (!newest || t > newest) newest = t;
+      if (!oldest || t < oldest) oldest = t;
+    });
+    var text = metaText;
+    if (failure) text = failure + (text ? " · " + text : "");
+    return {
+      ok: true,
+      stale: stale,
+      partial: !!result.partial,
+      priced: priced.length,
+      newest: newest || null,
+      oldest: oldest || null,
+      loadedAt: loadedAt || null,
+      text: text
+    };
+  }
+
+  function priceNoteLine(summary, dates) {
+    dates = dates || {};
+    if (!summary || summary.skipped || summary.aborted) return "";
+    if (!summary.ok) return summary.text || "";
+    var bits = [];
+    if (summary.stale) {
+      if (summary.text) bits.push(summary.text);
+      if (dates.checked) bits.push("checked " + dates.checked);
+    } else {
+      bits.push("Pump prices loaded" + (dates.checked ? " " + dates.checked : ""));
+      if (summary.text) bits.push(summary.text);
+    }
+    if (dates.newest) bits.push("newest report " + dates.newest);
+    if (dates.oldest && dates.oldest !== dates.newest) bits.push("oldest report " + dates.oldest);
+    return bits.join(" · ");
+  }
+
+  function abortError() {
+    var e = new Error("aborted");
+    e.name = "AbortError";
+    return e;
+  }
+
+  function retryablePriceError(e) {
+    var msg = String((e && e.message) || "");
+    if (/HTTP\s+(400|401|404|410|422)\b/.test(msg)) return false;
+    if (/HTTP\s+(403|408|409|425|429|500|502|503|504)\b/.test(msg)) return true;
+    if (/failed to fetch|network|timeout|load failed/i.test(msg)) return true;
+    return false;
+  }
+
+  function sleep(ms, signal) {
+    return new Promise(function (resolve, reject) {
+      if (signal && signal.aborted) {
+        reject(abortError());
+        return;
+      }
+      var timer = setTimeout(function () {
+        if (signal) signal.removeEventListener("abort", onAbort);
+        if (signal && signal.aborted) reject(abortError());
+        else resolve();
+      }, ms);
+      function onAbort() {
+        clearTimeout(timer);
+        reject(abortError());
+      }
+      if (signal) signal.addEventListener("abort", onAbort);
+    });
+  }
+
+  async function fetchOneTile(box, opts, normalize) {
+    var url = priceUrl(opts.base, box);
+    var attempts = opts.retries == null ? PRICE_FETCH_RETRIES : opts.retries;
+    var lastErr = null;
+    for (var attempt = 0; attempt <= attempts; attempt++) {
+      if (opts.signal && opts.signal.aborted) throw abortError();
+      try {
+        var js = await opts.fetcher(url, opts.signal, box);
+        var stations = stationsFromPayload(js).map(normalize).filter(Boolean);
+        var meta = metaFromPayload(js);
+        var cellErrors = meta ? meta.cellErrors : 0;
+        if (js && js.error && !stations.length) return { stations: [], error: String(js.error), meta: meta };
+        if (!stations.length && cellErrors > 0) return { stations: [], error: "Price feed failed", meta: meta };
+        return { stations: stations, meta: meta };
+      } catch (e) {
+        if (e && e.name === "AbortError") throw e;
+        lastErr = e;
+        if (attempt >= attempts || !retryablePriceError(e)) break;
+        await sleep(400 * (attempt + 1), opts.signal);
+      }
+    }
+    return { stations: [], error: (lastErr && lastErr.message) || "Price feed failed" };
+  }
+
+  async function mapPool(items, limit, fn) {
+    var results = new Array(items.length);
+    var next = 0;
+    var workers = Math.max(1, Math.min(limit, items.length));
+    async function worker() {
+      while (next < items.length) {
+        var i = next++;
+        results[i] = await fn(items[i], i);
+      }
+    }
+    var jobs = [];
+    for (var w = 0; w < workers; w++) jobs.push(worker());
+    await Promise.all(jobs);
+    return results;
+  }
+
   async function fetchTiledPrices(latLngs, opts) {
     opts = opts || {};
     var boxes = boxesAlongRoute(latLngs, opts.maxSpan, opts.pad, opts.overlap);
     var normalize = opts.normalize || function (s) { return s; };
-    var results = await Promise.all(boxes.map(async function (box) {
-      var url = priceUrl(opts.base, box);
-      try {
-        var js = await opts.fetcher(url, opts.signal, box);
-        var stations = stationsFromPayload(js).map(normalize).filter(Boolean);
-        var cellErrors = js && js.meta ? Number(js.meta.cellErrors) : 0;
-        if (js && js.error && !stations.length) return { stations: [], error: String(js.error) };
-        if (!stations.length && cellErrors > 0) return { stations: [], error: "Price feed failed" };
-        return { stations: stations };
-      } catch (e) {
-        if (e && e.name === "AbortError") throw e;
-        return { stations: [], error: (e && e.message) || "Price feed failed" };
-      }
-    }));
+    var limit = opts.concurrency == null ? PRICE_FETCH_CONCURRENCY : Math.max(1, opts.concurrency | 0);
+    var results = await mapPool(boxes, limit, function (box) {
+      return fetchOneTile(box, opts, normalize);
+    });
     var combined = combineTileResults(results);
     combined.boxes = boxes;
     return combined;
@@ -182,6 +371,7 @@
     PRICE_MAX_SPAN: PRICE_MAX_SPAN,
     PRICE_PAD: PRICE_PAD,
     PRICE_OVERLAP: PRICE_OVERLAP,
+    PRICE_FETCH_CONCURRENCY: PRICE_FETCH_CONCURRENCY,
     splitAxis: splitAxis,
     boxesFromBbox: boxesFromBbox,
     boxesAlongRoute: boxesAlongRoute,
@@ -189,6 +379,8 @@
     combineTileResults: combineTileResults,
     priceUrl: priceUrl,
     priceFailureNote: priceFailureNote,
+    priceUpdateSummary: priceUpdateSummary,
+    priceNoteLine: priceNoteLine,
     fetchTiledPrices: fetchTiledPrices
   };
 })(typeof globalThis !== "undefined" ? globalThis : this);
