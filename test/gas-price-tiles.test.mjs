@@ -173,11 +173,16 @@ assert.equal(partial.stations.length, 1);
 assert.equal(partial.stations[0].regular, 3.2);
 assert.equal(Feed.priceFailureNote(partial), "Some live pump prices did not load.");
 
+let upstreamCalls = 0;
 const upstream = await Feed.fetchTiledPrices([[28, -82], [28.2, -81.8]], {
   base: "https://pack.here2serve.us/gas",
   normalize,
-  fetcher: async () => ({ stations: [], meta: { cellErrors: 3 } })
+  fetcher: async () => {
+    upstreamCalls++;
+    return { stations: [], meta: { cellErrors: 3 } };
+  }
 });
+assert.equal(upstreamCalls, 1, "an empty tile with cell errors is not retried");
 assert.equal(Feed.priceFailureNote(upstream), "Price feed failed — live pump prices did not load.");
 
 const seen = new Set();
@@ -315,6 +320,8 @@ assert.match(html, /CoastalPriceFeed\.isDeadPackGasUrl/);
 assert.match(html, /CoastalPriceFeed\.resolveStationPriceApi/);
 assert.match(html, /CoastalPriceFeed\.gasLayerRequested/);
 assert.match(html, /CoastalPriceFeed\.normalizeWorkerStation/);
+assert.match(html, /concurrency:\s*2/);
+assert.match(html, /gap:\s*450/);
 assert.match(html, /Gas is off\. Turn Gas on to load street prices\./);
 assert.match(html, /min-height:\s*44px/);
 assert.match(html, /class="gas-toggle"/);

@@ -389,13 +389,16 @@
     var lastErr = null;
     for (var attempt = 0; attempt <= attempts; attempt++) {
       if (opts.signal && opts.signal.aborted) throw abortError();
+      if (attempt === 0 && opts.gap) await sleep(opts.gap, opts.signal);
       try {
         var js = await opts.fetcher(url, opts.signal, box);
         var stations = stationsFromPayload(js).map(normalize).filter(Boolean);
         var meta = metaFromPayload(js);
         var cellErrors = meta ? meta.cellErrors : 0;
         if (js && js.error && !stations.length) return { stations: [], error: String(js.error), meta: meta };
-        if (!stations.length && cellErrors > 0) return { stations: [], error: "Price feed failed", meta: meta };
+        // Empty plus cell errors is an upstream miss. Retrying it multiplies
+        // GasBuddy calls and keeps the rest of the route empty, so record it once.
+        if (!stations.length && cellErrors > 0) return { stations: [], error: "Price feed cell errors", meta: meta };
         return { stations: stations, meta: meta };
       } catch (e) {
         if (e && e.name === "AbortError") throw e;
@@ -404,7 +407,7 @@
         await sleep(400 * (attempt + 1), opts.signal);
       }
     }
-    return { stations: [], error: (lastErr && lastErr.message) || "Price feed failed" };
+    return { stations: [], error: (lastErr && lastErr.message) || "Price feed failed", meta: lastErr && lastErr.meta };
   }
 
   async function mapPool(items, limit, fn) {
