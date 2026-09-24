@@ -1,12 +1,12 @@
 /* Route-scoped gas price tiling.
    The Florida → North Carolina drive is one box about 8° × 8.6°.
-   Requests stay at or under 7° on a side so a proxy size cap cannot
-   reject the whole feed. Tiles overlap; duplicate stations collapse
-   to the newer price. */
+   Each request stays at or under 3.5° on a side: small enough for the
+   price proxy (larger boxes come back as a bad gateway) and under the
+   older 8° cap. Tiles overlap; duplicate stations collapse to the newer price. */
 (function (root) {
   "use strict";
 
-  var PRICE_MAX_SPAN = 7;
+  var PRICE_MAX_SPAN = 3.5;
   var PRICE_PAD = 0.3;
   var PRICE_OVERLAP = 0.35;
 
@@ -155,24 +155,62 @@
     return "";
   }
 
+  function tileHadUpstreamError(js, stations) {
+    if (stations.length) return "";
+    if (js && js.error) return String(js.error);
+    var meta = js && js.meta;
+    if (!meta) return "";
+    if (Number(meta.cellErrors) > 0) return "Price feed failed";
+    if (meta.lastError) return "Price feed failed";
+    if (Array.isArray(meta.lastErrors) && meta.lastErrors.length) return "Price feed failed";
+    return "";
+  }
+
+  function delay(ms, signal) {
+    return new Promise(function (resolve, reject) {
+      if (signal && signal.aborted) {
+        reject(new DOMException("aborted", "AbortError"));
+        return;
+      }
+      var timer = setTimeout(resolve, ms);
+      if (signal) {
+        signal.addEventListener("abort", function () {
+          clearTimeout(timer);
+          reject(new DOMException("aborted", "AbortError"));
+        }, { once: true });
+      }
+    });
+  }
+
   async function fetchTiledPrices(latLngs, opts) {
     opts = opts || {};
     var boxes = boxesAlongRoute(latLngs, opts.maxSpan, opts.pad, opts.overlap);
     var normalize = opts.normalize || function (s) { return s; };
-    var results = await Promise.all(boxes.map(async function (box) {
+    var retryDelayMs = opts.retryDelayMs == null ? 400 : opts.retryDelayMs;
+    var results = [];
+    for (var i = 0; i < boxes.length; i++) {
+      var box = boxes[i];
       var url = priceUrl(opts.base, box);
-      try {
-        var js = await opts.fetcher(url, opts.signal, box);
-        var stations = stationsFromPayload(js).map(normalize).filter(Boolean);
-        var cellErrors = js && js.meta ? Number(js.meta.cellErrors) : 0;
-        if (js && js.error && !stations.length) return { stations: [], error: String(js.error) };
-        if (!stations.length && cellErrors > 0) return { stations: [], error: "Price feed failed" };
-        return { stations: stations };
-      } catch (e) {
-        if (e && e.name === "AbortError") throw e;
-        return { stations: [], error: (e && e.message) || "Price feed failed" };
+      var last = { stations: [], error: "Price feed failed" };
+      for (var attempt = 0; attempt < 2; attempt++) {
+        if (opts.signal && opts.signal.aborted) throw new DOMException("aborted", "AbortError");
+        try {
+          var js = await opts.fetcher(url, opts.signal, box);
+          var stations = stationsFromPayload(js).map(normalize).filter(Boolean);
+          var upstream = tileHadUpstreamError(js, stations);
+          if (!upstream) {
+            last = { stations: stations };
+            break;
+          }
+          last = { stations: [], error: upstream };
+        } catch (e) {
+          if (e && e.name === "AbortError") throw e;
+          last = { stations: [], error: (e && e.message) || "Price feed failed" };
+        }
+        if (attempt === 0) await delay(retryDelayMs, opts.signal);
       }
-    }));
+      results.push(last);
+    }
     var combined = combineTileResults(results);
     combined.boxes = boxes;
     return combined;

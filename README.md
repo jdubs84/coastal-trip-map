@@ -22,7 +22,7 @@ No street price is invented. OpenStreetMap does not publish live pump prices. Ga
 
 The default `STATION_PRICE_API` in `index.html` is `https://pack.here2serve.us/gas` (JSON, CORS `*`). A trailing slash on that URL is fine.
 
-The Florida → North Carolina drive is one box about 8° wide and 8.6° tall. The map does not send that box in one request. It walks the driving route and requests overlapping tiles of at most 7° on a side (`gas-prices.js`), then merges stations that appear in more than one tile and keeps the newer price. Those prices are matched to nearby OpenStreetMap stations the same way as before. If a tile fails, the note under Gas says so. Pins from OpenStreetMap stay up, and a missing price is left blank.
+The Florida → North Carolina drive is one box about 8° wide and 8.6° tall. The map does not send that box in one request. It walks the driving route and requests overlapping tiles of at most 3.5° on a side, one after another (`gas-prices.js`). That stays under an 8° proxy cap, and it stays small enough that this price host can answer (a box near 7° comes back as a bad gateway). Stations that appear in more than one tile are merged, keeping the newer price, then matched to nearby OpenStreetMap stations the same way as before. A tile that fails is tried once more. If prices still fail, the note under Gas says so. Pins from OpenStreetMap stay up, and a missing price is left blank.
 
 To point the map at a different backend, change `STATION_PRICE_API` in `index.html`, or in the browser you use for the trip:
 

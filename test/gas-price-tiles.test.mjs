@@ -6,7 +6,7 @@ const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const routeGeo = JSON.parse(html.match(/const routeGeo = (\{.*?\});/)[1]);
 const drive = routeGeo.coordinates.map(c => [c[1], c[0]]);
 
-const sandbox = {};
+const sandbox = { setTimeout, clearTimeout, DOMException };
 vm.runInNewContext(fs.readFileSync(new URL("../gas-prices.js", import.meta.url), "utf8"), sandbox);
 const Feed = sandbox.CoastalPriceFeed;
 assert.ok(Feed, "CoastalPriceFeed exports");
@@ -39,10 +39,11 @@ assert.ok(routeSpan.lon > 7.5, "fixture is the full coastal route (lon)");
 
 const tiles = Feed.boxesAlongRoute(drive);
 assert.ok(tiles.length >= 2, "full route is more than one price request");
+assert.ok(Feed.PRICE_MAX_SPAN <= 7);
 tiles.forEach((box, i) => {
   const s = spans(box);
-  assert.ok(s.lon <= 7.01, "tile " + i + " lon " + s.lon);
-  assert.ok(s.lat <= 7.01, "tile " + i + " lat " + s.lat);
+  assert.ok(s.lon <= Feed.PRICE_MAX_SPAN + 0.02, "tile " + i + " lon " + s.lon);
+  assert.ok(s.lat <= Feed.PRICE_MAX_SPAN + 0.02, "tile " + i + " lat " + s.lat);
   assert.ok(s.lon < routeSpan.lon - 0.5 || s.lat < routeSpan.lat - 0.5, "tile " + i + " is not the full route box");
 });
 
@@ -79,7 +80,7 @@ const jump = Feed.boxesAlongRoute([[27.9, -82.8], [35.9, -75.5]]);
 assert.ok(jump.length >= 2);
 jump.forEach(box => {
   const s = spans(box);
-  assert.ok(s.lon <= 7.01 && s.lat <= 7.01);
+  assert.ok(s.lon <= Feed.PRICE_MAX_SPAN + 0.02 && s.lat <= Feed.PRICE_MAX_SPAN + 0.02);
 });
 const midLat = (27.9 + 35.9) / 2;
 const midLon = (-82.8 + -75.5) / 2;
@@ -108,12 +109,13 @@ function normalize(s) {
 const calls = [];
 const loaded = await Feed.fetchTiledPrices(drive, {
   base: "https://pack.here2serve.us/gas",
+  retryDelayMs: 0,
   normalize,
   fetcher: async (url) => {
     calls.push(url);
     const bbox = new URL(url).searchParams.get("bbox").split(",").map(Number);
-    assert.ok(bbox[2] - bbox[0] <= 7.01);
-    assert.ok(bbox[3] - bbox[1] <= 7.01);
+    assert.ok(bbox[2] - bbox[0] <= Feed.PRICE_MAX_SPAN + 0.02);
+    assert.ok(bbox[3] - bbox[1] <= Feed.PRICE_MAX_SPAN + 0.02);
     return {
       stations: [
         { name: "Priced", lat: (bbox[1] + bbox[3]) / 2, lon: (bbox[0] + bbox[2]) / 2, regular: "3.459", updated: "2026-09-24T00:00:00Z" },
@@ -133,19 +135,20 @@ assert.ok(calls.every(url => !url.includes("bbox=" + fullQuery)), "no request us
 
 const failed = await Feed.fetchTiledPrices(drive, {
   base: "https://pack.here2serve.us/gas/",
+  retryDelayMs: 0,
   normalize,
   fetcher: async () => { throw new Error("Price feed HTTP 404"); }
 });
 assert.equal(failed.stations.length, 0);
 assert.equal(Feed.priceFailureNote(failed), "Price feed failed — live pump prices did not load.");
 
-let partialCalls = 0;
+const failUrl = Feed.priceUrl("https://pack.here2serve.us/gas", tiles[0]);
 const partial = await Feed.fetchTiledPrices(drive, {
   base: "https://pack.here2serve.us/gas",
+  retryDelayMs: 0,
   normalize,
-  fetcher: async () => {
-    partialCalls++;
-    if (partialCalls === 1) throw new Error("Price feed HTTP 500");
+  fetcher: async (url) => {
+    if (url === failUrl) throw new Error("Price feed HTTP 500");
     return { stations: [{ name: "Ok", lat: 32.5, lon: -80.3, regular: 3.2, updated: "2026-09-24T00:00:00Z" }] };
   }
 });
@@ -156,6 +159,7 @@ assert.equal(Feed.priceFailureNote(partial), "Some live pump prices did not load
 
 const upstream = await Feed.fetchTiledPrices([[28, -82], [28.2, -81.8]], {
   base: "https://pack.here2serve.us/gas",
+  retryDelayMs: 0,
   normalize,
   fetcher: async () => ({ stations: [], meta: { cellErrors: 3 } })
 });
