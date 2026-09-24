@@ -6,7 +6,7 @@ const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const routeGeo = JSON.parse(html.match(/const routeGeo = (\{.*?\});/)[1]);
 const drive = routeGeo.coordinates.map(c => [c[1], c[0]]);
 
-const sandbox = {};
+const sandbox = { setTimeout, clearTimeout };
 vm.runInNewContext(fs.readFileSync(new URL("../gas-prices.js", import.meta.url), "utf8"), sandbox);
 const Feed = sandbox.CoastalPriceFeed;
 assert.ok(Feed, "CoastalPriceFeed exports");
@@ -38,6 +38,7 @@ assert.ok(routeSpan.lat > 8, "fixture is the full coastal route (lat)");
 assert.ok(routeSpan.lon > 7.5, "fixture is the full coastal route (lon)");
 
 assert.equal(Feed.PRICE_MAX_SPAN, 1.2);
+assert.equal(Feed.PRICE_FETCH_CONCURRENCY, 4);
 assert.ok(Feed.PRICE_MAX_SPAN <= 1.5, "every price tile stays at or under 1.5°");
 const maxRequestSpan = Feed.PRICE_MAX_SPAN + 0.01;
 
@@ -112,11 +113,17 @@ function normalize(s) {
 }
 
 const calls = [];
+let inflight = 0;
+let maxInflight = 0;
 const loaded = await Feed.fetchTiledPrices(drive, {
   base: "https://pack.here2serve.us/gas",
   normalize,
   fetcher: async (url) => {
+    inflight += 1;
+    maxInflight = Math.max(maxInflight, inflight);
     calls.push(url);
+    await new Promise(r => setTimeout(r, 15));
+    inflight -= 1;
     const bbox = new URL(url).searchParams.get("bbox").split(",").map(Number);
     assert.ok(bbox[2] - bbox[0] <= maxRequestSpan);
     assert.ok(bbox[3] - bbox[1] <= maxRequestSpan);
@@ -130,10 +137,16 @@ const loaded = await Feed.fetchTiledPrices(drive, {
     };
   }
 });
+assert.ok(maxInflight >= 2 && maxInflight <= Feed.PRICE_FETCH_CONCURRENCY, "price tiles stay at or under " + Feed.PRICE_FETCH_CONCURRENCY + " in flight (saw " + maxInflight + ")");
 assert.ok(calls.length >= 2);
 assert.equal(loaded.stations.length, calls.length);
 assert.ok(loaded.stations.every(s => s.regular === 3.459 && s.name === "Priced"));
 assert.equal(Feed.priceFailureNote(loaded), "");
+const loadedSummary = Feed.priceUpdateSummary(loaded, Date.parse("2026-09-24T01:30:00Z"));
+assert.equal(loadedSummary.ok, true);
+assert.equal(loadedSummary.priced, loaded.stations.length);
+assert.equal(loadedSummary.newest, Date.parse("2026-09-24T00:00:00Z"));
+assert.equal(loadedSummary.text, "");
 const fullQuery = routeBox.map(n => n.toFixed(4)).join(",");
 assert.ok(calls.every(url => !url.includes("bbox=" + fullQuery)), "no request uses the full-route bbox");
 
@@ -151,7 +164,7 @@ const partial = await Feed.fetchTiledPrices(drive, {
   normalize,
   fetcher: async () => {
     partialCalls++;
-    if (partialCalls === 1) throw new Error("Price feed HTTP 500");
+    if (partialCalls === 1) throw new Error("Price feed HTTP 404");
     return { stations: [{ name: "Ok", lat: 32.5, lon: -80.3, regular: 3.2, updated: "2026-09-24T00:00:00Z" }] };
   }
 });
@@ -167,10 +180,76 @@ const upstream = await Feed.fetchTiledPrices([[28, -82], [28.2, -81.8]], {
 });
 assert.equal(Feed.priceFailureNote(upstream), "Price feed failed — live pump prices did not load.");
 
+const seen = new Set();
+let retryInflight = 0;
+let retryMax = 0;
+const retried = await Feed.fetchTiledPrices(drive, {
+  base: "https://pack.here2serve.us/gas",
+  normalize,
+  fetcher: async (url) => {
+    retryInflight += 1;
+    retryMax = Math.max(retryMax, retryInflight);
+    try {
+      if (!seen.has(url)) {
+        seen.add(url);
+        throw new Error("Price feed HTTP 403");
+      }
+      const bbox = new URL(url).searchParams.get("bbox").split(",").map(Number);
+      return {
+        stations: [{ name: "Retried", lat: (bbox[1] + bbox[3]) / 2, lon: (bbox[0] + bbox[2]) / 2, regular: 3.11, midgrade: 0, updated: "2026-09-24T03:00:00Z" }]
+      };
+    } finally {
+      retryInflight -= 1;
+    }
+  }
+});
+assert.ok(retryMax <= Feed.PRICE_FETCH_CONCURRENCY);
+assert.equal(retried.failedTiles, 0);
+assert.equal(retried.stations.length, tiles.length);
+assert.ok(retried.stations.every(s => s.regular === 3.11));
+const retriedSummary = Feed.priceUpdateSummary(retried, Date.parse("2026-09-24T03:05:00Z"));
+assert.equal(retriedSummary.ok, true);
+assert.equal(retriedSummary.text, "");
+
+const denied = await Feed.fetchTiledPrices([[28, -82.5], [28.2, -82.2]], {
+  base: "https://pack.here2serve.us/gas",
+  retries: 1,
+  normalize,
+  fetcher: async () => { throw new Error("Price feed HTTP 403"); }
+});
+const deniedSummary = Feed.priceUpdateSummary(denied, Date.now());
+assert.equal(denied.stations.length, 0);
+assert.equal(deniedSummary.ok, false);
+assert.equal(deniedSummary.priced, 0);
+assert.equal(deniedSummary.loadedAt, null);
+assert.match(deniedSummary.text, /did not load/);
+assert.doesNotMatch(deniedSummary.text, /Pump prices loaded/);
+
+const blanks = Feed.priceUpdateSummary({
+  stations: [
+    { name: "No", lat: 28, lon: -82, regular: null, midgrade: 0 },
+    { name: "Zero", lat: 28.1, lon: -82.1, regular: 0, midgrade: null }
+  ],
+  tiles: 1,
+  failedTiles: 0
+}, Date.now());
+assert.equal(blanks.ok, false);
+assert.equal(blanks.priced, 0);
+assert.match(blanks.text, /No pump prices came back/);
+
 assert.match(html, /const STATION_PRICE_API = "https:\/\/pack\.here2serve\.us\/gas"/);
 assert.match(html, /localStorage\.getItem\("coastalGasPriceApi"\)/);
 assert.match(html, /CoastalPriceFeed\.fetchTiledPrices/);
-assert.match(html, /CoastalPriceFeed\.priceFailureNote/);
+assert.match(html, /CoastalPriceFeed\.priceUpdateSummary/);
+assert.match(html, /cache:\s*"no-store"/);
+assert.match(html, /src="gas-prices\.js\?v=/);
+assert.match(html, /id="chkRestaurants">/);
+assert.match(html, /id="chkGas">/);
+assert.doesNotMatch(html, /id="chkRestaurants" checked/);
+assert.doesNotMatch(html, /id="chkGas" checked/);
+assert.match(html, /if \(chk\.checked\) startLoad\(false\)/);
+assert.match(html, /function paintPrices\(/);
+assert.match(html, /Pump prices loaded/);
 assert.doesNotMatch(html, /const STATION_PRICE_API = "https:\/\/gas\.here2serve\.us"/);
 
-console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests)");
+console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests, max in flight " + maxInflight + ")");
