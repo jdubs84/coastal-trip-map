@@ -6,7 +6,7 @@ const html = fs.readFileSync(new URL("../index.html", import.meta.url), "utf8");
 const routeGeo = JSON.parse(html.match(/const routeGeo = (\{.*?\});/)[1]);
 const drive = routeGeo.coordinates.map(c => [c[1], c[0]]);
 
-const sandbox = { setTimeout, clearTimeout };
+const sandbox = { setTimeout, clearTimeout, URL, URLSearchParams };
 vm.runInNewContext(fs.readFileSync(new URL("../gas-prices.js", import.meta.url), "utf8"), sandbox);
 const Feed = sandbox.CoastalPriceFeed;
 assert.ok(Feed, "CoastalPriceFeed exports");
@@ -100,8 +100,8 @@ assert.equal(duped.length, 1);
 assert.equal(duped[0].regular, 3.49);
 
 assert.equal(
-  Feed.priceUrl("https://pack.here2serve.us/gas", [-82, 27, -81, 28]),
-  "https://pack.here2serve.us/gas?bbox=-82.0000,27.0000,-81.0000,28.0000&grade=regular"
+  Feed.priceUrl("https://gas.here2serve.us/gas", [-82, 27, -81, 28]),
+  "https://gas.here2serve.us/gas?bbox=-82.0000,27.0000,-81.0000,28.0000&grade=regular"
 );
 assert.ok(Feed.priceUrl("https://pack.here2serve.us/gas/", [-82, 27, -81, 28]).startsWith("https://pack.here2serve.us/gas/?bbox="));
 assert.ok(Feed.priceUrl("https://example.test/gas?x=1", [-82, 27, -81, 28]).includes("&bbox="));
@@ -156,7 +156,7 @@ const failed = await Feed.fetchTiledPrices(drive, {
   fetcher: async () => { throw new Error("Price feed HTTP 404"); }
 });
 assert.equal(failed.stations.length, 0);
-assert.equal(Feed.priceFailureNote(failed), "Price feed failed — live pump prices did not load.");
+assert.equal(Feed.priceFailureNote(failed), "Price feed HTTP 404.");
 
 let partialCalls = 0;
 const partial = await Feed.fetchTiledPrices(drive, {
@@ -173,11 +173,16 @@ assert.equal(partial.stations.length, 1);
 assert.equal(partial.stations[0].regular, 3.2);
 assert.equal(Feed.priceFailureNote(partial), "Some live pump prices did not load.");
 
+let upstreamCalls = 0;
 const upstream = await Feed.fetchTiledPrices([[28, -82], [28.2, -81.8]], {
   base: "https://pack.here2serve.us/gas",
   normalize,
-  fetcher: async () => ({ stations: [], meta: { cellErrors: 3 } })
+  fetcher: async () => {
+    upstreamCalls++;
+    return { stations: [], meta: { cellErrors: 3 } };
+  }
 });
+assert.equal(upstreamCalls, 1, "an empty tile with cell errors is not retried");
 assert.equal(Feed.priceFailureNote(upstream), "Price feed failed — live pump prices did not load.");
 
 const seen = new Set();
@@ -222,8 +227,23 @@ assert.equal(denied.stations.length, 0);
 assert.equal(deniedSummary.ok, false);
 assert.equal(deniedSummary.priced, 0);
 assert.equal(deniedSummary.loadedAt, null);
-assert.match(deniedSummary.text, /did not load/);
+assert.match(deniedSummary.text, /HTTP 403/);
 assert.doesNotMatch(deniedSummary.text, /Pump prices loaded/);
+
+const timedOut = await Feed.fetchTiledPrices([[28, -82.5], [28.2, -82.2]], {
+  base: "https://gas.here2serve.us/gas",
+  retries: 0,
+  normalize,
+  fetcher: async () => { throw new Error("Price feed timed out"); }
+});
+assert.equal(Feed.priceFailureNote(timedOut), "Price feed timed out.");
+const emptyBody = await Feed.fetchTiledPrices([[28, -82.5], [28.2, -82.2]], {
+  base: "https://gas.here2serve.us/gas",
+  retries: 0,
+  normalize,
+  fetcher: async () => { throw new Error("Price feed returned an empty response"); }
+});
+assert.equal(Feed.priceFailureNote(emptyBody), "Price feed returned an empty response.");
 
 const blanks = Feed.priceUpdateSummary({
   stations: [
@@ -238,19 +258,7 @@ assert.equal(blanks.priced, 0);
 assert.match(blanks.text, /No pump prices came back/);
 
 function pageNormalize(s) {
-  const num = (v) => {
-    const n = typeof v === "string" ? parseFloat(v) : v;
-    if (!Number.isFinite(n) || n <= 0 || n > 12) return null;
-    return n;
-  };
-  if (!s || typeof s !== "object") return null;
-  const lat = +s.lat;
-  const lon = +s.lon;
-  const regular = num(s.regular != null ? s.regular : s.price);
-  const midgrade = num(s.midgrade);
-  if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-  if (regular == null && midgrade == null) return null;
-  return { name: s.name, lat, lon, regular, midgrade, updated: s.updated || "" };
+  return Feed.normalizeWorkerStation(s);
 }
 
 const packTile = await Feed.fetchTiledPrices([[27.9, -82.8], [28.1, -82.4]], {
@@ -305,8 +313,51 @@ const freshLine = Feed.priceNoteLine(
 assert.match(freshLine, /^Pump prices loaded Sep 24, 2:00 AM/);
 assert.doesNotMatch(freshLine, /oldest report/);
 
-assert.match(html, /const STATION_PRICE_API = "https:\/\/pack\.here2serve\.us\/gas"/);
+assert.match(html, /const STATION_PRICE_API = "https:\/\/gas\.here2serve\.us\/gas"/);
+assert.doesNotMatch(html, /const STATION_PRICE_API = "https:\/\/pack\.here2serve\.us\/gas"/);
 assert.match(html, /localStorage\.getItem\("coastalGasPriceApi"\)/);
+assert.match(html, /CoastalPriceFeed\.isDeadPackGasUrl/);
+assert.match(html, /CoastalPriceFeed\.resolveStationPriceApi/);
+assert.match(html, /CoastalPriceFeed\.gasLayerRequested/);
+assert.match(html, /CoastalPriceFeed\.normalizeWorkerStation/);
+assert.match(html, /concurrency:\s*2/);
+assert.match(html, /gap:\s*450/);
+assert.match(html, /Gas is off\. Turn Gas on to load street prices\./);
+assert.match(html, /min-height:\s*44px/);
+assert.match(html, /class="gas-toggle"/);
+const workerDefault = "https://gas.here2serve.us/gas";
+assert.equal(Feed.resolveStationPriceApi("", workerDefault), workerDefault);
+assert.equal(Feed.resolveStationPriceApi(null, workerDefault), workerDefault);
+assert.equal(Feed.resolveStationPriceApi("https://example.test/gas", workerDefault), "https://example.test/gas");
+assert.equal(Feed.resolveStationPriceApi("https://pack.here2serve.us/gas", workerDefault), workerDefault);
+assert.equal(Feed.resolveStationPriceApi("https://pack.here2serve.us/gas/", workerDefault), workerDefault);
+assert.equal(Feed.resolveStationPriceApi("https://pack.here2serve.us/gas?bbox=1,2,3,4", workerDefault), workerDefault);
+assert.equal(Feed.isDeadPackGasUrl("https://pack.here2serve.us/gas"), true);
+assert.equal(Feed.isDeadPackGasUrl("https://gas.here2serve.us/gas"), false);
+assert.equal(Feed.gasLayerRequested("?gas=1", ""), true);
+assert.equal(Feed.gasLayerRequested("", "#gas"), true);
+assert.equal(Feed.gasLayerRequested("?gas=0", ""), false);
+assert.equal(Feed.gasLayerRequested("?foo=1", "#route"), false);
+const circleK = Feed.normalizeWorkerStation({
+  name: "Circle K",
+  lat: 29.9201077,
+  lon: -81.2936164,
+  regular: 4.39,
+  midgrade: 4.89,
+  updated: "2026-09-23T20:24:37.856Z",
+  source: "GasBuddy",
+  city: "St Augustine",
+  state: "FL",
+  address: "2919 Coastal Hwy"
+});
+assert.equal(circleK.name, "Circle K");
+assert.equal(circleK.lat, 29.9201077);
+assert.equal(circleK.lon, -81.2936164);
+assert.equal(circleK.regular, 4.39);
+assert.equal(circleK.street, "2919 Coastal Hwy");
+assert.equal(Feed.normalizeWorkerStation({ name: "Blank", lat: 29.9, lon: -81.2, regular: null }), null);
+assert.equal(Feed.normalizeWorkerStation({ name: "Absurd", lat: 29.9, lon: -81.2, regular: 40 }), null);
+assert.equal(Feed.normalizeWorkerStation({ name: "Text", lat: 29.9, lon: -81.2, regular: "nope" }), null);
 assert.match(html, /CoastalPriceFeed\.fetchTiledPrices/);
 assert.match(html, /CoastalPriceFeed\.priceUpdateSummary/);
 assert.match(html, /CoastalPriceFeed\.priceNoteLine/);
@@ -327,6 +378,6 @@ assert.doesNotMatch(html, /id="chkGas" checked/);
 assert.match(html, /if \(chk\.checked\) startLoad\(false\)/);
 assert.match(html, /function paintPrices\(/);
 assert.match(html, /function priceNote\(/);
-assert.doesNotMatch(html, /const STATION_PRICE_API = "https:\/\/gas\.here2serve\.us"/);
+assert.match(html, /Price feed timed out/);
 
 console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests, max in flight " + maxInflight + ")");

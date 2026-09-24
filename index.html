@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:gas-layer-20260923 -->
+<html lang="en"><!-- build:gas-worker-20260924 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -337,14 +337,27 @@
 .gas-poi-icon div{position:relative;z-index:711;background-clip:padding-box}
 .leaflet-gaspins-pane{z-index:710 !important}
 .gas-refresh {
-  display:inline-flex; align-items:center;
+  display:inline-flex; align-items:center; justify-content:center;
   border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--ink);
-  border-radius:999px; padding:7px 11px; font:inherit; font-size:.78rem; font-weight:650;
+  border-radius:999px; padding:10px 16px; font:inherit; font-size:.78rem; font-weight:650;
   cursor:pointer;
+  min-height:44px; min-width:44px;
+  touch-action:manipulation;
 }
+.food-layers label.gas-toggle {
+  min-height:44px; min-width:44px;
+  padding:10px 16px;
+  touch-action:manipulation;
+}
+.food-layers label.gas-toggle input {
+  width:22px; height:22px; margin:0; flex:none;
+}
+.food-layers label.gas-toggle,
+.gas-refresh { order:-1; }
 .gas-refresh:hover { background:rgba(255,255,255,.08); }
 .gas-note {
-  flex-basis:100%; width:100%; margin:0;
+  order:-1;
+  flex-basis:100%; width:100%; margin:2px 0 0;
   font-size:.72rem; line-height:1.4; color:var(--muted);
 }
 .gas-note[hidden] { display:none !important; }
@@ -1425,6 +1438,19 @@ html, body {
   .leaflet-top.leaflet-left {
     top:calc(8px + env(safe-area-inset-top, 0px));
   }
+  /* Peek sheet is short and clips later rows. Keep Gas + Refresh first and tappable. */
+  aside.sheet-collapsed {
+    display:flex !important;
+    flex-direction:column !important;
+  }
+  aside.sheet-collapsed .sheet-handle { order:0; flex:none; }
+  aside.sheet-collapsed .food-layers {
+    order:1;
+    flex:none;
+    margin:0 12px 8px;
+  }
+  aside.sheet-collapsed .kicker,
+  aside.sheet-collapsed h1 { order:2; }
 }
 @media (min-width:901px) and (hover:hover) and (pointer:fine) {
   body {
@@ -1476,7 +1502,7 @@ html, body {
     <label title="Cook Out"><input type="checkbox" id="chkCookout"> <span class="sw" style="background:#e67e22"></span> Cook Out</label>
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
     <label title="Restaurants"><input type="checkbox" id="chkRestaurants"> <span class="sw" style="background:#16a085"></span> Restaurants</label>
-    <label title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
+    <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
     <p class="gas-note" id="gasNote" hidden></p>
   </div>
@@ -1587,7 +1613,7 @@ html, body {
   <button type="button" class="btn-locate" id="btnLocate" title="Show my live location" aria-label="Show my live location">◎</button>
   <div class="brand"><strong>Driving route on roads</strong><span>1028.4 miles · 22h 54m · Home → FL → NC</span></div>
 </div>
-<script src="gas-prices.js?v=5"></script>
+<script src="gas-prices.js?v=7"></script>
 <script>
 const home = {"lat": 27.911904, "lon": -82.817489, "address": "3007 Bluffs Drive, Largo, FL 33770"};
 const stops = [{"name": "1. Anastasia SP bungalows", "query": "Anastasia State Park, St. Augustine, FL", "lat": 29.8675, "lon": -81.271, "start": "2026-09-27", "end": "2026-09-29", "note": "2 nights", "short": "Anastasia SP bungalows", "place": "Anastasia State Park, St. Augustine, FL", "date_range": "Sep 27 – Sep 29", "drive_in": "4h 19m · 212.5 mi"}, {"name": "2. Edisto Beach SP cabins", "query": "Edisto Beach State Park, Edisto Island, SC", "lat": 32.505, "lon": -80.299, "start": "2026-09-29", "end": "2026-10-01", "note": "2 nights", "short": "Edisto Beach SP cabins", "place": "Edisto Beach State Park, Edisto Island, SC", "date_range": "Sep 29 – Oct 1", "drive_in": "5h 35m · 278.3 mi"}, {"name": "3. Clayton Cabin (Commander's Island)", "query": "Georgetown, South Carolina", "lat": 33.3768, "lon": -79.2945, "start": "2026-10-01", "end": "2026-10-04", "note": "3 nights · boat-access", "short": "Clayton Cabin (Commander's Island)", "place": "Georgetown, South Carolina", "date_range": "Oct 1 – Oct 4", "drive_in": "2h 34m · 106.3 mi"}, {"name": "4. Carolina Beach SP cabin", "query": "Carolina Beach State Park, Carolina Beach, NC", "lat": 34.036, "lon": -77.907, "start": "2026-10-04", "end": "2026-10-06", "note": "2 nights · bring linens", "short": "Carolina Beach SP cabin", "place": "Carolina Beach State Park, Carolina Beach, NC", "date_range": "Oct 4 – Oct 6", "drive_in": "2h 56m · 122.7 mi"}, {"name": "5. Hammocks Beach SP · Simmons cabin", "query": "Hammocks Beach State Park, Swansboro, NC", "lat": 34.687, "lon": -77.139, "start": "2026-10-06", "end": "2026-10-08", "note": "2 nights · bring linens", "short": "Hammocks Beach SP · Simmons cabin", "place": "Hammocks Beach State Park, Swansboro, NC", "date_range": "Oct 6 – Oct 8", "drive_in": "2h 05m · 81.4 mi"}, {"name": "6. Frisco Woods camping cabin", "query": "Frisco Woods Campground, Frisco, NC", "lat": 35.223, "lon": -75.635, "start": "2026-10-08", "end": "2026-10-10", "note": "2 nights · bring linens", "short": "Frisco Woods camping cabin", "place": "Frisco Woods Campground, Frisco, NC", "date_range": "Oct 8 – Oct 10", "drive_in": "5h 24m · 227.2 mi"}];
@@ -2711,6 +2737,7 @@ FOOD_POIS.forEach(p => {
    Street prices are shown only when STATION_PRICE_API or localStorage
    coastalGasPriceApi returns real numbers. Nothing is invented.
    The full drive is requested as overlapping tiles, not one FL→NC box.
+   ?gas=1 or #gas turns the layer on. A saved pack.here2serve.us/gas URL is ignored.
    See README.md. */
 (function setupGasLayer(){
   const chk = document.getElementById('chkGas');
@@ -2720,8 +2747,9 @@ FOOD_POIS.forEach(p => {
 
   // Default station-price feed. GET {url}?bbox=minLon,minLat,maxLon,maxLat&grade=regular
   // → { stations: [{ name, lat, lon, regular, midgrade, updated, source, city, state, address }] }
-  // A saved https URL in localStorage coastalGasPriceApi replaces this.
-  const STATION_PRICE_API = "https://pack.here2serve.us/gas";
+  // A saved https URL in localStorage coastalGasPriceApi replaces this,
+  // except the dead Pack tunnel https://pack.here2serve.us/gas.
+  const STATION_PRICE_API = "https://gas.here2serve.us/gas";
   const CACHE_KEY = "coastal-gas-osm-v1";
   const CACHE_MS = 12 * 60 * 60 * 1000;
   const STEP_MI = 30;
@@ -2764,11 +2792,26 @@ FOOD_POIS.forEach(p => {
     return d.toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
   }
   function priceApiUrl() {
+    let saved = "";
     try {
-      const saved = localStorage.getItem("coastalGasPriceApi");
-      if (saved && /^https:\/\//i.test(saved)) return saved;
+      saved = localStorage.getItem("coastalGasPriceApi") || "";
+      if (saved && CoastalPriceFeed.isDeadPackGasUrl(saved)) {
+        localStorage.removeItem("coastalGasPriceApi");
+        saved = "";
+      }
     } catch (e) {}
-    return STATION_PRICE_API;
+    return CoastalPriceFeed.resolveStationPriceApi(saved, STATION_PRICE_API);
+  }
+  function gasOffNote() {
+    note.hidden = false;
+    note.textContent = "Gas is off. Turn Gas on to load street prices.";
+  }
+  function gasDeepLinkOn() {
+    try {
+      return CoastalPriceFeed.gasLayerRequested(location.search, location.hash);
+    } catch (e) {
+      return false;
+    }
   }
   function setOn(on) { if (label) label.classList.toggle("on", !!on); }
   function showLayer(on) {
@@ -2961,24 +3004,7 @@ FOOD_POIS.forEach(p => {
   }
 
   function normalizePriceStation(s) {
-    if (!s || typeof s !== "object") return null;
-    const lat = +s.lat;
-    const lon = +s.lon;
-    const regular = numPrice(s.regular != null ? s.regular : (s.price != null ? s.price : s.regularPrice));
-    const midgrade = numPrice(s.midgrade != null ? s.midgrade : s.midgradePrice);
-    if (!Number.isFinite(lat) || !Number.isFinite(lon)) return null;
-    if (regular == null && midgrade == null) return null;
-    return {
-      name: s.name || s.brand || "Fuel station",
-      brand: s.brand || "",
-      lat, lon,
-      city: s.city || "",
-      state: s.state || "",
-      street: s.address || s.street || "",
-      regular, midgrade,
-      updated: s.updated || s.postedTime || s.lastUpdated || "",
-      priceSource: s.source || "price feed"
-    };
+    return CoastalPriceFeed.normalizeWorkerStation(s);
   }
 
   async function fetchPrices(signal) {
@@ -2989,15 +3015,43 @@ FOOD_POIS.forEach(p => {
     return CoastalPriceFeed.fetchTiledPrices(driveLatLngs, {
       base: base,
       signal: signal,
+      // The Worker answers small boxes, then GasBuddy cell-errors the rest if
+      // the whole route is fired at once. Two at a time, with a short gap.
+      concurrency: 2,
+      gap: 450,
       normalize: normalizePriceStation,
       fetcher: async function (url, sig) {
-        const res = await fetch(url, {
-          signal: sig,
-          cache: "no-store",
-          headers: { "Accept": "application/json" }
-        });
-        if (!res.ok) throw new Error("Price feed HTTP " + res.status);
-        return res.json();
+        const timeoutMs = 12000;
+        const timed = new AbortController();
+        const timer = setTimeout(() => timed.abort(), timeoutMs);
+        const onAbort = () => timed.abort();
+        if (sig) sig.addEventListener("abort", onAbort);
+        try {
+          const res = await fetch(url, {
+            signal: timed.signal,
+            cache: "no-store",
+            headers: { "Accept": "application/json" }
+          });
+          if (!res.ok) throw new Error("Price feed HTTP " + res.status);
+          try {
+            return await res.json();
+          } catch (parseErr) {
+            throw new Error("Price feed returned an empty response");
+          }
+        } catch (e) {
+          if (sig && sig.aborted) {
+            const abort = new Error("aborted");
+            abort.name = "AbortError";
+            throw abort;
+          }
+          if (e && (e.name === "AbortError" || e.name === "TimeoutError")) {
+            throw new Error("Price feed timed out");
+          }
+          throw e;
+        } finally {
+          clearTimeout(timer);
+          if (sig) sig.removeEventListener("abort", onAbort);
+        }
       }
     });
   }
@@ -3370,9 +3424,9 @@ FOOD_POIS.forEach(p => {
     showLayer(chk.checked);
     if (chk.checked) startLoad(false);
     else {
-      note.hidden = true;
       document.querySelectorAll(".local-gas").forEach(n => n.remove());
       if (controller) controller.abort();
+      gasOffNote();
     }
   });
   if (refreshBtn) {
@@ -3384,9 +3438,11 @@ FOOD_POIS.forEach(p => {
       startLoad(true);
     });
   }
+  if (gasDeepLinkOn()) chk.checked = true;
   setOn(chk.checked);
   showLayer(chk.checked);
   if (chk.checked) startLoad(false);
+  else gasOffNote();
 })();
 </script>
 </body>

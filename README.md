@@ -14,17 +14,19 @@ Pins stay inside a corridor around the real drive (about 10 miles), spread acros
 | --- | --- | --- |
 | Station name, brand, approximate location | [OpenStreetMap](https://www.openstreetmap.org) via the public [Overpass](https://overpass-api.de) API | When the Gas layer turns on, and when you press **Refresh gas**. A load is cached in this browser for 12 hours so a reload does not hammer Overpass. If a stretch fails, the pins that did load are still saved, and the note says so. |
 | US average regular and midgrade | [FuelEconomy.gov fuel prices](https://www.fueleconomy.gov/ws/rest/fuelprices) | Fetched on each Gas load. This is a **national average**, not the price at a pin. |
-| Live pump price on a pin | `https://pack.here2serve.us/gas` | Fetched when Gas is turned on, and again on **Refresh gas**. The note says when pump prices loaded, or that the feed failed. A `$` chip is printed only for a price the feed returned. |
+| Live pump price on a pin | `https://gas.here2serve.us/gas` | Fetched when Gas is turned on, and again on **Refresh gas**. The note says when pump prices loaded, or that the feed timed out, returned an HTTP error, or came back empty. A `$` chip is printed only for a price the feed returned. |
 
 No street price is invented. OpenStreetMap does not publish live pump prices. GasBuddy, Costco, and retailer price pages are not usable from a static GitHub Pages site: they either block browser requests (CORS or Cloudflare) or need a key. The map only prints a dollar amount on a pin when a price feed actually returns one.
 
 ### Optional station-price API
 
-The default `STATION_PRICE_API` in `index.html` is `https://pack.here2serve.us/gas` (JSON, CORS `*`). A trailing slash on that URL is fine.
+The default `STATION_PRICE_API` in `index.html` is `https://gas.here2serve.us/gas` (JSON, CORS `*`). The Worker root `https://gas.here2serve.us` answers the same JSON. A trailing slash on that URL is fine.
+
+`https://pack.here2serve.us/gas` is the old Pack tunnel. It currently hangs with no bytes. The map does not use it. A phone that still has that exact URL saved under `coastalGasPriceApi` drops the override and uses the Worker instead.
 
 The Florida → North Carolina drive is one box about 8° wide and 8.6° tall. The map does not send that box in one request. It walks the driving route and requests overlapping tiles of at most 1.2° on a side (`gas-prices.js`), a few tiles at a time. Sending every tile at once is rejected (HTTP 403), and then no pump price is attached. Stations that appear in more than one tile collapse to the newer price. Those prices are matched to nearby OpenStreetMap stations the same way as before. If a tile still fails, the note under Gas says so and does not claim the prices refreshed. Pins from OpenStreetMap stay up, and a missing price is left blank.
 
-Restaurant and Gas both start off. Nothing from those layers is requested until the box is ticked. Turning Gas on, and **Refresh gas**, both request the price feed again. OpenStreetMap locations can stay cached for 12 hours; pump prices are not part of that cache. The note under Gas repeats Pack's `meta` when the feed sends it (`cache`, `source`, `lastError`) and the newest and oldest station `updated` times. A stale GasBuddy cache still shows the dollar amounts Pack returned. It does not say those prices were refreshed just now.
+Restaurant and Gas both start off. Nothing from those layers is requested until the box is ticked, unless the page is opened with `?gas=1` or `#gas`, which turns Gas on. While Gas is off, the note under the checkbox says so. Turning Gas on, and **Refresh gas**, both request the price feed again. OpenStreetMap locations can stay cached for 12 hours; pump prices are not part of that cache. The note under Gas repeats the feed `meta` when it is sent (`cache`, `source`, `lastError`) and the newest and oldest station `updated` times. If the feed times out, returns an HTTP error, or comes back with no prices, the note says that. It does not leave the pins blank with no explanation. A stale cache still shows the dollar amounts the feed returned. It does not say those prices were refreshed just now.
 
 To point the map at a different backend, change `STATION_PRICE_API` in `index.html`, or in the browser you use for the trip:
 
