@@ -1865,7 +1865,7 @@ map.createPane('stoppins');
 map.getPane('stoppins').style.zIndex = 740;
 map.createPane('gaspins');
 map.getPane('gaspins').style.zIndex = 710;
-map.getPane('popup').style.zIndex = 800;
+map.getPane('popupPane').style.zIndex = 800;
 const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'Tiles © Esri', maxZoom:18 });
 const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution:'Labels © Esri', maxZoom:18, opacity:0.9, pane:'roadlabels' });
 const roads = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { attribution:'Roads © Esri', maxZoom:18, opacity:1, pane:'roadlabels' });
