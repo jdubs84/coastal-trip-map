@@ -437,17 +437,24 @@
   /* Live locate */
   
   .btn-hub {
-    position:absolute; right:70px; bottom:16px; z-index:500;
-    height:46px; padding:0 14px; border-radius:23px;
+    position:absolute; z-index:1;
+    --hub-x: calc(56px + env(safe-area-inset-left, 0px));
+    --hub-y: calc(10px + env(safe-area-inset-top, 0px));
+    left: var(--hub-x);
+    top: var(--hub-y);
+    min-height:44px; height:44px; padding:0 14px; border-radius:22px;
     border:1px solid rgba(62,196,208,.45);
     background:rgba(8,14,18,.9); color:#7fdbe3;
     backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
     box-shadow:0 10px 28px rgba(0,0,0,.45), 0 0 18px rgba(62,196,208,.15);
-    font-size:.85rem; font-weight:600; letter-spacing:.02em;
-    cursor:pointer; display:flex; align-items:center; justify-content:center;
-    text-decoration:none;
+    font-size:.95rem; font-weight:650; letter-spacing:.01em;
+    cursor:pointer; display:inline-flex; align-items:center; justify-content:center;
+    text-decoration:none; white-space:nowrap; box-sizing:border-box;
+    touch-action:manipulation; -webkit-tap-highlight-color:transparent;
+    pointer-events:auto;
   }
-  .btn-hub:active { transform:scale(.97); }
+  .btn-hub .hub-d { display:none; }
+  .btn-hub:active { background:rgba(62,196,208,.22); color:#e8f7fa; }
 
   .btn-locate {
     position:absolute; right:16px; bottom:16px; z-index:500;
@@ -1476,7 +1483,22 @@ html, body {
     inset:auto !important;
     width:auto !important;
   }
+  .btn-hub {
+    min-height:36px; height:36px; padding:0 12px;
+    font-size:.78rem; border-radius:18px;
+  }
 }
+@media (min-width:901px) {
+  .btn-hub {
+    --hub-x: calc(10px + env(safe-area-inset-left, 0px));
+    --hub-y: calc(96px + env(safe-area-inset-top, 0px));
+  }
+  .btn-hub .hub-m { display:none; }
+  .btn-hub .hub-d { display:inline; }
+}
+.leaflet-hubnav-pane { z-index:760 !important; pointer-events:none !important; }
+.leaflet-popup-pane { z-index:800; }
+.btn-hub, #btnHub { pointer-events:auto !important; }
 </style>
 </head>
 <body>
@@ -1612,7 +1634,7 @@ html, body {
     </div>
     <div class="tminus-sub">Leave · <strong>Sep 27 · 12:25 PM ET</strong></div>
   </div>
-  <a class="btn-hub" id="btnHub" href="https://jdubs84.github.io/coastal-trip-hub/" title="Open trip Hub">Hub</a>
+  <a class="btn-hub" id="btnHub" href="https://jdubs84.github.io/coastal-trip-hub/" aria-label="Back to Hub" title="Back to Hub"><span class="hub-m">‹ Hub</span><span class="hub-d">← Back to Hub</span></a>
   <button type="button" class="btn-locate" id="btnLocate" title="Show my live location" aria-label="Show my live location">◎</button>
   <div class="brand"><strong>Driving route on roads</strong><span>1028.4 miles · 22h 54m · Home → FL → NC</span></div>
 </div>
@@ -1843,6 +1865,49 @@ const map = L.map('map', {
   tapTolerance:15,
   bounceAtZoomLimits:false
 });
+// Keep Back to Hub pinned to the map corner: above pins, under popups.
+(function mountHubLink() {
+  var link = document.getElementById('btnHub');
+  if (!link) return;
+  var pane = map.createPane('hubnav');
+  pane.appendChild(link);
+  var mapPane = map.getPane('mapPane');
+  var running = false;
+  function syncHubLink() {
+    var t = getComputedStyle(mapPane).transform;
+    var ox = link.offsetLeft;
+    var oy = link.offsetTop;
+    if (!t || t === 'none') { link.style.transform = 'none'; return; }
+    var is3d = t.indexOf('matrix3d') === 0;
+    var nums = t.slice(t.indexOf('(') + 1, t.length - 1).split(',').map(parseFloat);
+    var a, b, c, d, tx, ty;
+    if (is3d) {
+      a = nums[0]; b = nums[1]; c = nums[4]; d = nums[5]; tx = nums[12]; ty = nums[13];
+    } else {
+      a = nums[0]; b = nums[1]; c = nums[2]; d = nums[3]; tx = nums[4]; ty = nums[5];
+    }
+    var det = a * d - b * c;
+    if (!det) return;
+    var ia = d / det, ib = -b / det, ic = -c / det, id = a / det;
+    var itx = (ia * ox + ic * oy) - (ia * tx + ic * ty) - ox;
+    var ity = (ib * ox + id * oy) - (ib * tx + id * ty) - oy;
+    link.style.transformOrigin = '0 0';
+    link.style.transform = 'matrix(' + ia + ',' + ib + ',' + ic + ',' + id + ',' + itx + ',' + ity + ')';
+  }
+  function frame() {
+    syncHubLink();
+    if (running) requestAnimationFrame(frame);
+  }
+  function start() { if (!running) { running = true; frame(); } }
+  function stop() { running = false; syncHubLink(); }
+  ['pointerdown', 'mousedown', 'touchstart', 'click', 'dblclick', 'contextmenu'].forEach(function(type) {
+    link.addEventListener(type, function(ev) { ev.stopPropagation(); });
+  });
+  map.on('movestart zoomstart', start);
+  map.on('moveend zoomend viewreset resize', stop);
+  map.whenReady(syncHubLink);
+  syncHubLink();
+})();
 // Zoom with Ctrl/⌘ + scroll (or the +/- buttons / pinch)
 map.getContainer().addEventListener('wheel', function(e) {
   if (!(e.ctrlKey || e.metaKey)) return;
