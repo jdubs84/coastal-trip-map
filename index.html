@@ -1501,6 +1501,7 @@ html, body {
     <label title="Buc-ee's"><input type="checkbox" id="chkBucees"> <span class="sw" style="background:#d4af37"></span> Buc-ee's</label>
     <label title="Cook Out"><input type="checkbox" id="chkCookout"> <span class="sw" style="background:#e67e22"></span> Cook Out</label>
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
+    <label title="Panera Bread"><input type="checkbox" id="chkPanera"> <span class="sw" style="background:#7cb342"></span> Panera</label>
     <label title="Restaurants"><input type="checkbox" id="chkRestaurants"> <span class="sw" style="background:#16a085"></span> Restaurants</label>
     <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
@@ -2422,6 +2423,336 @@ const FOOD_POIS = [
     "lat": 29.486034,
     "lon": -82.163847,
     "note": "14531 E County Road 325, Hawthorne FL (Cross Creek) · classic Cracker cuisine stop on Home→Anastasia"
+  },
+  /* Panera cafes: within 3.5 mi of the drive, plus Clearwater Gulf to Bay near home. Locator coordinates (2026-09-21). */
+  {
+    "brand": "panera",
+    "name": "Panera Largo Starkey",
+    "lat": 27.871704,
+    "lon": -82.76042,
+    "note": "10801 Starkey Road, Largo, FL 33777"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Clearwater Ulmerton",
+    "lat": 27.89445,
+    "lon": -82.664791,
+    "note": "2285 Ulmerton Road, Clearwater, FL 33762"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Belleair Bluffs",
+    "lat": 27.916227,
+    "lon": -82.81891,
+    "note": "2928 W Bay Drive, Belleair Bluffs, FL 33770"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Tampa Hyde Park",
+    "lat": 27.937183,
+    "lon": -82.483245,
+    "note": "701 South Howard Avenue, Tampa, FL 33606"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Tampa Westshore",
+    "lat": 27.944501,
+    "lon": -82.523361,
+    "note": "112 Westshore Blvd, Tampa, FL 33609"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Clearwater Gulf to Bay",
+    "lat": 27.958953,
+    "lon": -82.726527,
+    "note": "2679 Gulf To Bay Boulevard, Clearwater, FL 33759"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Tampa MLK",
+    "lat": 27.980854,
+    "lon": -82.499095,
+    "note": "3420 W Dr MLK Jr Blvd, Tampa, FL 33607"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Plant City",
+    "lat": 27.982782,
+    "lon": -82.12232,
+    "note": "2909 James L Redman Parkway, Plant City, FL 33566"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Lakeland",
+    "lat": 28.094295,
+    "lon": -81.972648,
+    "note": "4159 US Highway 98 North, Lakeland, FL 33809"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Davenport Posner",
+    "lat": 28.223824,
+    "lon": -81.643922,
+    "note": "1121 Posner Blvd, Davenport, FL 33837"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Davenport ChampionsGate",
+    "lat": 28.262559,
+    "lon": -81.613167,
+    "note": "8190 Laura Ln, Davenport, FL 33896"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Celebration",
+    "lat": 28.33134,
+    "lon": -81.533648,
+    "note": "51 Celebration Place, Celebration, FL 34747"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Orlando International Dr",
+    "lat": 28.409979,
+    "lon": -81.455534,
+    "note": "10739 International Drive, Orlando, FL 32821"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Orlando Sand Lake",
+    "lat": 28.449416,
+    "lon": -81.489539,
+    "note": "7826 W Sandlake Road, Orlando, FL 32819"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Orlando Millenia",
+    "lat": 28.48665,
+    "lon": -81.42843,
+    "note": "4060 Conroy Rd, Orlando, FL 32839"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Orlando The Grove",
+    "lat": 28.49202,
+    "lon": -81.509031,
+    "note": "4700 S Apopka Vineland Rd, Orlando, FL 32819"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Orlando S Orange",
+    "lat": 28.507812,
+    "lon": -81.376741,
+    "note": "3138 S Orange Ave, Orlando, FL 32806"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Orlando Colonial",
+    "lat": 28.554561,
+    "lon": -81.34157,
+    "note": "3463 East Colonial Drive, Orlando, FL 32803"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Orlando N Orange",
+    "lat": 28.573758,
+    "lon": -81.372501,
+    "note": "2415 N Orange Ave, Orlando, FL 32804"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Winter Park",
+    "lat": 28.600339,
+    "lon": -81.351343,
+    "note": "329 N Park Avenue, Winter Park, FL 32789"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Altamonte SR 434",
+    "lat": 28.66032,
+    "lon": -81.420635,
+    "note": "200 S SR 434, Altamonte Springs, FL 32714"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Altamonte Springs",
+    "lat": 28.662582,
+    "lon": -81.36479,
+    "note": "730 East Altamonte Drive, Altamonte Springs, FL 32701"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Lake Mary",
+    "lat": 28.754905,
+    "lon": -81.352851,
+    "note": "864 South Sun Drive, Lake Mary, FL 32746"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Sanford",
+    "lat": 28.799744,
+    "lon": -81.335269,
+    "note": "1457 WP Ball Blvd, Sanford, FL 32771"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Daytona Beach",
+    "lat": 29.181045,
+    "lon": -81.080552,
+    "note": "2400 International Speedway Blvd, Daytona Beach, FL 32124"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Ormond Beach",
+    "lat": 29.263019,
+    "lon": -81.1059,
+    "note": "1310 W Granada Blvd, Ormond Beach, FL 32174"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Palm Coast",
+    "lat": 29.476341,
+    "lon": -81.195414,
+    "note": "5880 State Route 100, Palm Coast, FL 32164"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera St. Augustine Tingle",
+    "lat": 29.866954,
+    "lon": -81.33042,
+    "note": "600 Tingle Ct, St. Augustine, FL 32086"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera St. Augustine Village Commons",
+    "lat": 29.965938,
+    "lon": -81.487406,
+    "note": "235 Village Commons Drive, St. Augustine, FL 32092"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera St. Johns",
+    "lat": 30.081691,
+    "lon": -81.477143,
+    "note": "55 Beachwalk Shore Dr, St. Johns, FL 32259"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Jacksonville Bartram",
+    "lat": 30.142439,
+    "lon": -81.552133,
+    "note": "13740 Old St Augustine Rd, Jacksonville, FL 32258"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Jacksonville Baymeadows",
+    "lat": 30.221469,
+    "lon": -81.561064,
+    "note": "9485 Baymeadows Rd, Jacksonville, FL 32256"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Jacksonville Town Center",
+    "lat": 30.257339,
+    "lon": -81.527945,
+    "note": "4720 Town Crossing Drive, Jacksonville, FL 32246"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Jacksonville Atlantic Blvd",
+    "lat": 30.317947,
+    "lon": -81.557918,
+    "note": "9301 Atlantic Blvd, Jacksonville, FL 32225"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Jacksonville River City",
+    "lat": 30.479448,
+    "lon": -81.641445,
+    "note": "13271 City Station Dr, Jacksonville, FL 32218"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Kingsland",
+    "lat": 30.78738,
+    "lon": -81.651522,
+    "note": "105-B Crown Pointe Parkway, Kingsland, GA 31548"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Brunswick",
+    "lat": 31.232504,
+    "lon": -81.497408,
+    "note": "10105 Canal Crossing, Brunswick, GA 31525"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Pooler",
+    "lat": 32.142734,
+    "lon": -81.247724,
+    "note": "234 Pooler Parkway, Pooler, GA 31322"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Charleston",
+    "lat": 32.795108,
+    "lon": -80.028516,
+    "note": "2000 Sam Rittenberg Boulevard, Charleston, SC 29407"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Mt. Pleasant",
+    "lat": 32.861131,
+    "lon": -79.792924,
+    "note": "1135 Muhlenbergia Dr, Mt. Pleasant, SC 29466"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Myrtle Beach",
+    "lat": 33.650228,
+    "lon": -78.982815,
+    "note": "1370 S Commons Dr, Myrtle Beach, SC 29588"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera North Myrtle Beach",
+    "lat": 33.840491,
+    "lon": -78.663653,
+    "note": "1296 Hwy 17 N, North Myrtle Beach, SC 29582"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Wilmington Oleander",
+    "lat": 34.216483,
+    "lon": -77.906271,
+    "note": "3506 Oleander Drive, Wilmington, NC 28403"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Leland",
+    "lat": 34.217917,
+    "lon": -78.017833,
+    "note": "2024 Olde Regent Way, Leland, NC 28451"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Wilmington Mayfaire",
+    "lat": 34.233965,
+    "lon": -77.829527,
+    "note": "1156 Military Cutoff Rd, Wilmington, NC 28405"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera Jacksonville NC",
+    "lat": 34.789466,
+    "lon": -77.405286,
+    "note": "1619 Western Boulevard, Jacksonville, NC 28546"
+  },
+  {
+    "brand": "panera",
+    "name": "Panera New Bern",
+    "lat": 35.102947,
+    "lon": -77.085329,
+    "note": "2997 Dr Martin Luther King Jr Boulevard, New Bern, NC 28562"
   }
 ];
 attachRouteDistances(FOOD_POIS);
@@ -2432,12 +2763,14 @@ attachRouteDistances(FOOD_POIS);
     bucees: L.layerGroup(),
     cookout: L.layerGroup(),
     wawa: L.layerGroup(),
+    panera: L.layerGroup(),
     restaurant: L.layerGroup()
   };
   const brandStyle = {
     bucees: { color:'#d4af37', label:"Buc-ee's" },
     cookout: { color:'#e67e22', label:'Cook Out' },
     wawa: { color:'#c0392b', label:'Wawa' },
+    panera: { color:'#7cb342', label:'Panera' },
     restaurant: { color:'#16a085', label:'The Yearling' }
   };
   window.__foodMarkers = [];
@@ -2470,13 +2803,16 @@ attachRouteDistances(FOOD_POIS);
     return best;
   }
   FOOD_POIS.forEach((p, idx) => {
+    // Chip offset only. Keep lat/lon as the real cafe so directions stay accurate.
+    p._pinLat = p.lat;
+    p._pinLon = p.lon;
     const n=nearestOnRoute(p.lat, p.lon);
     if (n.d > 0.35) return; // already clear of the line
     const side = (idx % 2 === 0) ? 1 : -1;
     const perp = n.bearing + Math.PI/2;
     const deg = 0.5 / 69; // ~0.5 mi in degrees lat
-    p.lat = p.lat + Math.cos(perp) * deg * side;
-    p.lon = p.lon + Math.sin(perp) * deg * side / Math.max(0.4, Math.cos(p.lat*Math.PI/180));
+    p._pinLat = p.lat + Math.cos(perp) * deg * side;
+    p._pinLon = p.lon + Math.sin(perp) * deg * side / Math.max(0.4, Math.cos(p.lat*Math.PI/180));
     p._routeNudged = true;
   });
 })();
@@ -2491,11 +2827,13 @@ FOOD_POIS.forEach(p => {
       iconSize: [72, 18],
       iconAnchor: [36, 9]
     });
+    const pinLat = p._pinLat != null ? p._pinLat : p.lat;
+    const pinLon = p._pinLon != null ? p._pinLon : p.lon;
     const apple = `https://maps.apple.com/?q=${encodeURIComponent(p.name)}&ll=${p.lat},${p.lon}`;
     const google = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
     const tip = `<div class="popup"><h3>${p.name}</h3><p>${p.note || ''}</p><p class="off-route">${p.offRouteLabel || ''}</p>` +
       `<p><a href="${apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${google}" target="_blank" rel="noopener">Google Maps</a></p></div>`;
-    const marker = L.marker([p.lat, p.lon], { icon, pane: 'foodpins', zIndexOffset: 800, riseOnHover: true })
+    const marker = L.marker([pinLat, pinLon], { icon, pane: 'foodpins', zIndexOffset: 800, riseOnHover: true })
       .bindPopup(tip).bindTooltip(p.name, { direction:'top', offset:[0,-8] });
     const key = brandLayers[p.brand] ? p.brand : 'bucees';
     marker.addTo(brandLayers[key]);
@@ -2523,14 +2861,16 @@ FOOD_POIS.forEach(p => {
     const b = !!document.getElementById('chkBucees')?.checked;
     const c = !!document.getElementById('chkCookout')?.checked;
     const w = !!document.getElementById('chkWawa')?.checked;
+    const pan = !!document.getElementById('chkPanera')?.checked;
     const r = !!document.getElementById('chkRestaurants')?.checked;
     syncSights(s);
     sync('bucees', b); setOn('chkBucees', b);
     sync('cookout', c); setOn('chkCookout', c);
     sync('wawa', w); setOn('chkWawa', w);
+    sync('panera', pan); setOn('chkPanera', pan);
     sync('restaurant', r); setOn('chkRestaurants', r);
   }
-  ['chkSights','chkBucees','chkCookout','chkWawa','chkRestaurants'].forEach(id => {
+  ['chkSights','chkBucees','chkCookout','chkWawa','chkPanera','chkRestaurants'].forEach(id => {
     document.getElementById(id)?.addEventListener('change', apply);
   });
   apply();
@@ -2552,13 +2892,14 @@ FOOD_POIS.forEach(p => {
     }
     // turn on the brand layer so the pin is visible
     const brand = p.brand;
-    const idMap = { bucees: 'chkBucees', cookout: 'chkCookout', wawa: 'chkWawa', restaurant: 'chkRestaurants' };
+    const idMap = { bucees: 'chkBucees', cookout: 'chkCookout', wawa: 'chkWawa', panera: 'chkPanera', restaurant: 'chkRestaurants' };
     const chk = document.getElementById(idMap[brand]);
     if (chk && !chk.checked) {
       chk.checked = true;
       chk.dispatchEvent(new Event('change'));
     }
-    map.flyTo([p.lat, p.lon], 12, { duration: 0.7 });
+    const ll = hit.marker.getLatLng();
+    map.flyTo([ll.lat, ll.lng], 12, { duration: 0.7 });
     setTimeout(() => { try { hit.marker.openPopup(); } catch (e) {} }, 400);
   }
   document.querySelectorAll('.stop[data-i]').forEach(el => {
