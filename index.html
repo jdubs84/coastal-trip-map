@@ -368,6 +368,8 @@
 .leaflet-foodpins-pane{z-index:700 !important}
 .leaflet-stoppins-pane{z-index:740 !important}
 .leaflet-marker-pane{z-index:600 !important}
+/* Above food, gas, sight, and stop pin panes so an open popup is never covered by a chip. */
+.leaflet-popup-pane{z-index:800 !important}
 
   /* T-minus countdown */
   .tminus {
@@ -1608,7 +1610,7 @@ html, body {
       <div class="tminus-cell"><div class="tminus-num" id="tm-m">--</div><div class="tminus-unit">Min</div></div>
       <div class="tminus-cell"><div class="tminus-num" id="tm-s">--</div><div class="tminus-unit">Sec</div></div>
     </div>
-    <div class="tminus-sub">Leave · <strong>Sep 27 · 11:40a ET</strong></div>
+    <div class="tminus-sub">Leave · <strong>Sep 27 · 12:25 PM ET</strong></div>
   </div>
   <a class="btn-hub" id="btnHub" href="https://jdubs84.github.io/coastal-trip-hub/" title="Open trip Hub">Hub</a>
   <button type="button" class="btn-locate" id="btnLocate" title="Show my live location" aria-label="Show my live location">◎</button>
@@ -1863,6 +1865,7 @@ map.createPane('stoppins');
 map.getPane('stoppins').style.zIndex = 740;
 map.createPane('gaspins');
 map.getPane('gaspins').style.zIndex = 710;
+map.getPane('popup').style.zIndex = 800;
 const sat = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', { attribution:'Tiles © Esri', maxZoom:18 });
 const labels = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}', { attribution:'Labels © Esri', maxZoom:18, opacity:0.9, pane:'roadlabels' });
 const roads = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Transportation/MapServer/tile/{z}/{y}/{x}', { attribution:'Roads © Esri', maxZoom:18, opacity:1, pane:'roadlabels' });
@@ -2964,8 +2967,8 @@ FOOD_POIS.forEach(p => {
 (function setupTminus(){
   const el = document.getElementById('tminus');
   if (!el) return;
-  // 2026-09-27 11:40:00 America/New_York = EDT (UTC-4) → 15:40:00Z
-  const TARGET = Date.parse('2026-09-27T15:40:00.000Z');
+  // 2026-09-27 12:25:00 America/New_York = EDT (UTC-4) → 16:25:00Z
+  const TARGET = Date.parse('2026-09-27T16:25:00.000Z');
   const pad = (n) => String(Math.max(0, n)).padStart(2, '0');
   const dEl = document.getElementById('tm-d');
   const hEl = document.getElementById('tm-h');
