@@ -4052,7 +4052,6 @@ FOOD_POIS.forEach(p => {
   let layer = null;
   let token = 0;
   let carrier = 'att';
-  try { const saved = localStorage.getItem(KEY); if (NAMES[saved]) carrier = saved; } catch (e) {}
   const params = new URLSearchParams(location.search);
   const deep = params.get('signal');
   if (deep && NAMES[deep]) carrier = deep;
