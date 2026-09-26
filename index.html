@@ -375,6 +375,24 @@
 .leaflet-marker-pane{z-index:600 !important}
 /* Above food, gas, sight, and stop pin panes so an open popup is never covered by a chip. */
 .leaflet-popup-pane{z-index:800 !important}
+/* Signal / dead-zone layer (FCC BDC). Lives in the sheet, not on the map, so it never overlaps map controls. */
+.food-layers label.signal-toggle { min-height:44px; padding:10px 16px; touch-action:manipulation; }
+.food-layers label.signal-toggle input { width:22px; height:22px; margin:0; flex:none; }
+.signal-panel { flex-basis:100%; width:100%; margin:0; display:flex; flex-direction:column; gap:8px; }
+.signal-panel[hidden] { display:none !important; }
+.signal-carriers { display:flex; flex-wrap:wrap; gap:6px; }
+.food-layers .signal-carriers label { padding:8px 12px; min-height:40px; font-size:.76rem; }
+.food-layers .signal-carriers label input { margin:0; }
+.signal-legend { margin:0; font-size:.72rem; line-height:1.45; color:var(--muted); overflow-wrap:anywhere; }
+.signal-legend strong { color:var(--ink); font-weight:650; }
+.signal-swatch { display:inline-block; width:14px; height:10px; vertical-align:-1px; margin-right:4px;
+  background:rgba(217,83,79,.45); border:1px solid #b3261e; border-radius:2px; }
+.signal-starlink { font-size:.72rem; line-height:1.45; color:var(--muted); }
+.signal-starlink summary { cursor:pointer; color:var(--ink); font-weight:650; padding:8px 0; }
+.signal-starlink ul { margin:4px 0 0; padding-left:18px; }
+.signal-starlink li { margin:0 0 4px; }
+.signal-starlink a, .signal-legend a { color:#9be7ee; }
+.leaflet-signal-pane path { cursor:pointer; }
 
   /* T-minus countdown */
   .tminus {
@@ -1535,6 +1553,28 @@ html, body {
     <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
     <p class="gas-note" id="gasNote" hidden></p>
+    <label class="signal-toggle" title="Cell dead zones along the route, from FCC coverage data"><input type="checkbox" id="chkSignal"> <span class="sw" style="background:#d9534f"></span> Signal gaps</label>
+    <div class="signal-panel" id="signalPanel" hidden>
+      <div class="signal-carriers" role="radiogroup" aria-label="Carrier">
+        <label><input type="radio" name="signalCarrier" value="att" checked> AT&amp;T</label>
+        <label><input type="radio" name="signalCarrier" value="vzw"> Verizon</label>
+        <label><input type="radio" name="signalCarrier" value="tmo"> T-Mobile</label>
+      </div>
+      <p class="signal-legend"><span class="signal-swatch" aria-hidden="true"></span>Red = the carrier reports no 4G LTE or 5G there (within 5 mi of the route and 3 mi of each stop, land only). Source: <a href="https://broadbandmap.fcc.gov/data-download/nationwide-data" target="_blank" rel="noopener">FCC National Broadband Map</a>, Broadband Data Collection, filing as of Dec 31, 2025. <strong>FCC provider-reported coverage; real signal can be worse.</strong> <span id="signalStatus"></span></p>
+      <details class="signal-starlink">
+        <summary>Starlink &amp; satellite notes</summary>
+        <p>Starlink's <a href="https://www.starlink.com/map" target="_blank" rel="noopener">availability map</a> shows service across the whole US, and Roam plans work anywhere in the US (<a href="https://www.starlink.com/roam" target="_blank" rel="noopener">starlink.com/roam</a>). There is no Starlink coverage gap on this coast. The real risk is trees blocking the dish: expect obstructions under canopy and find open sky (the Starlink app has a "Check for obstructions" tool).</p>
+        <ul>
+          <li><strong>Anastasia SP:</strong> the park says its campground sits in maritime hammock. Tree cover at the bungalows isn't stated. Expect some obstructions; find open sky.</li>
+          <li><strong>Edisto Beach SP cabins:</strong> SC State Parks says the cabins sit "nestled in the woods" on the salt marsh at Scott Creek. Expect obstructions; find open sky.</li>
+          <li><strong>Clayton Cabin (Commander's Island):</strong> no public description of the site. Check sky view on arrival.</li>
+          <li><strong>Carolina Beach SP cabin:</strong> NC State Parks says the campground (where the cabins are) is in a wooded area near Snow's Cut. Expect obstructions; find open sky.</li>
+          <li><strong>Hammocks Beach SP Simmons cabin:</strong> wooded areas border the four cabins (park announcement, 2024). Expect obstructions; find open sky.</li>
+          <li><strong>Frisco Woods:</strong> the campground advertises shaded tent sites. Tree cover at the cabins isn't stated. Expect some obstructions; find open sky.</li>
+        </ul>
+        <p>No cell signal? T-Mobile's <a href="https://www.t-mobile.com/coverage/satellite-phone-service" target="_blank" rel="noopener">T-Satellite</a> (Starlink direct-to-cell) sends texts and runs some apps from most outdoor US spots with a view of the sky. It needs a compatible phone and is included with some T-Mobile plans; otherwise it costs $10/mo, and AT&amp;T and Verizon customers can add it too.</p>
+      </details>
+    </div>
   </div>
   <div class="timeline">
   <div class="stop home-stop" data-home="1">
@@ -3987,6 +4027,97 @@ FOOD_POIS.forEach(p => {
   showLayer(chk.checked);
   if (chk.checked) startLoad(false);
   else gasOffNote();
+})();
+
+/* Signal / dead zones.
+   Data: signal/deadzones-{att,vzw,tmo}.geojson, built from the FCC National Broadband Map
+   (Broadband Data Collection, filing as of Dec 31, 2025), provider-reported mobile coverage,
+   H3 res-9 files. Shaded = no 4G LTE (5/1 Mbps) and no 5G-NR (7/1 Mbps), outdoor stationary.
+   Clipped to 5 mi each side of the route + 3 mi around each stop, land only. See signal/README.md.
+   Off by default. ?signal=1 (or ?signal=att|vzw|tmo, #signal) turns it on. */
+(function setupSignalLayer(){
+  if (typeof map === 'undefined' || typeof L === 'undefined') return;
+  const chk = document.getElementById('chkSignal');
+  const panel = document.getElementById('signalPanel');
+  const status = document.getElementById('signalStatus');
+  if (!chk || !panel) return;
+  const NAMES = { att:'AT&T', vzw:'Verizon', tmo:'T-Mobile' };
+  const SIGNAL_DATA_VERSION = '20251231-1';
+  const SIGNAL_URL = c => 'signal/deadzones-' + c + '.geojson?v=' + SIGNAL_DATA_VERSION;
+  const SIGNAL_SOURCE = 'FCC National Broadband Map (BDC), filing as of Dec 31, 2025';
+  const KEY = 'coastalSignalCarrier';
+  map.createPane('signal');
+  map.getPane('signal').style.zIndex = 340; // under the route line (350) and every pin pane
+  const cache = {};
+  let layer = null;
+  let token = 0;
+  let carrier = 'att';
+  try { const saved = localStorage.getItem(KEY); if (NAMES[saved]) carrier = saved; } catch (e) {}
+  const params = new URLSearchParams(location.search);
+  const deep = params.get('signal');
+  if (deep && NAMES[deep]) carrier = deep;
+  const radios = Array.from(document.querySelectorAll('input[name="signalCarrier"]'));
+  function esc(t){ return String(t).replace(/[&<>"]/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[ch])); }
+  function syncRadios(){
+    radios.forEach(r => { r.checked = (r.value === carrier); const lab = r.closest('label'); if (lab) lab.classList.toggle('on', r.checked); });
+  }
+  function style(){
+    return { pane:'signal', color:'#b3261e', weight:1, opacity:0.75, fillColor:'#d9534f', fillOpacity:0.38 };
+  }
+  function popupHtml(name, f){
+    const sq = f && f.properties && f.properties.sqmi;
+    const size = (typeof sq === 'number') ? ' (about ' + (sq < 1 ? sq.toFixed(1) : Math.round(sq)) + ' sq mi)' : '';
+    return '<div class="popup"><h3>No ' + esc(name) + ' signal reported</h3>' +
+      '<p>' + esc(name) + ' reports no 4G LTE or 5G coverage here' + esc(size) + '.</p>' +
+      '<p><strong>FCC provider-reported coverage; real signal can be worse.</strong></p>' +
+      '<p class="off-route">Source: ' + esc(SIGNAL_SOURCE) + '</p></div>';
+  }
+  async function load(c){
+    if (cache[c]) return cache[c];
+    const r = await fetch(SIGNAL_URL(c), { cache:'force-cache' });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    cache[c] = await r.json();
+    return cache[c];
+  }
+  function clear(){ if (layer) { map.removeLayer(layer); layer = null; } }
+  async function show(){
+    const my = ++token;
+    clear();
+    if (!chk.checked) { status.textContent = ''; return; }
+    const c = carrier, name = NAMES[c];
+    status.textContent = 'Loading ' + name + ' gaps…';
+    try {
+      const data = await load(c);
+      if (my !== token || !chk.checked) return;
+      layer = L.geoJSON(data, {
+        style,
+        onEachFeature: (f, l) => l.bindPopup(popupHtml(name, f), { maxWidth: 260 })
+      }).addTo(map);
+      const n = (data.features || []).length;
+      status.textContent = n ? (n + ' ' + name + ' gap areas shown.') : ('No ' + name + ' gaps in this corridor.');
+    } catch (e) {
+      if (my !== token) return;
+      status.textContent = 'Could not load ' + name + ' gaps (' + (e && e.message || 'error') + ').';
+    }
+  }
+  function setOn(on){
+    const lab = chk.closest('label');
+    if (lab) lab.classList.toggle('on', !!on);
+    panel.hidden = !on;
+  }
+  chk.addEventListener('change', () => { setOn(chk.checked); show(); });
+  radios.forEach(r => r.addEventListener('change', () => {
+    if (!r.checked || !NAMES[r.value]) return;
+    carrier = r.value;
+    try { localStorage.setItem(KEY, carrier); } catch (e) {}
+    syncRadios();
+    show();
+  }));
+  if (deep || /(^|[#&])signal\b/.test(location.hash)) chk.checked = true;
+  syncRadios();
+  setOn(chk.checked);
+  if (chk.checked) show();
+  window.__signalLayer = { show, get carrier(){ return carrier; }, url: SIGNAL_URL };
 })();
 </script>
 </body>
