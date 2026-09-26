@@ -64,3 +64,7 @@ and expects JSON like:
 Prices are matched to nearby OpenStreetMap stations (or shown on their own if nothing is close). Within each stretch of the route the cheaper regular is preferred, and the lowest regular in the load is marked on the map. Values that are missing, not numeric, or outside $0–$12 per gallon are ignored.
 
 Do not put a secret in `index.html`. Anything in that file is public on GitHub Pages. Prefer a price URL that does not need a key, or keep the URL in `localStorage` on your own browser.
+
+## Signal gaps layer
+
+The **Signal gaps** checkbox starts off. When it is on, the map shades places within about 5 miles of the route where the chosen carrier (AT&T, Verizon or T-Mobile) reports no 4G LTE or 5G coverage. The source is the FCC National Broadband Map (Broadband Data Collection), filing as of Dec 31, 2025. FCC provider-reported coverage; real signal can be worse. The data, source and rebuild steps are in [`signal/README.md`](signal/README.md). The same panel has Starlink notes: service covers this whole coast, so the risk is tree canopy blocking the dish, not a coverage gap. It also covers T-Mobile T-Satellite, which sends texts where no cell signal reaches.
