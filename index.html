@@ -464,11 +464,9 @@
   /* Live locate */
   
   .btn-hub {
-    position:absolute; z-index:1;
-    --hub-x: calc(56px + env(safe-area-inset-left, 0px));
-    --hub-y: calc(10px + env(safe-area-inset-top, 0px));
-    left: var(--hub-x);
-    top: var(--hub-y);
+    position:fixed; z-index:1000;
+    left: calc(56px + env(safe-area-inset-left, 0px));
+    top: calc(10px + env(safe-area-inset-top, 0px));
     min-height:44px; height:44px; padding:0 14px; border-radius:22px;
     border:1px solid rgba(62,196,208,.45);
     background:rgba(8,14,18,.9); color:#7fdbe3;
@@ -1527,13 +1525,13 @@ html, body {
 }
 @media (min-width:901px) {
   .btn-hub {
-    --hub-x: calc(10px + env(safe-area-inset-left, 0px));
-    --hub-y: calc(96px + env(safe-area-inset-top, 0px));
+    position:absolute;
+    left: calc(10px + env(safe-area-inset-left, 0px));
+    top: calc(96px + env(safe-area-inset-top, 0px));
   }
   .btn-hub .hub-m { display:none; }
   .btn-hub .hub-d { display:inline; }
 }
-.leaflet-hubnav-pane { z-index:760 !important; pointer-events:none !important; }
 .leaflet-popup-pane { z-index:800; }
 .btn-hub, #btnHub { pointer-events:auto !important; }
 </style>
@@ -1685,12 +1683,12 @@ html, body {
   <div id="map"></div>
   <div class="tminus" id="tminus" aria-live="polite" title="Tap to expand countdown">
     <div class="tminus-kicker"><span>T-minus</span><span class="pulse" aria-hidden="true"></span></div>
-    <div class="tminus-one" id="tm-one">--d --:--:--</div>
+    <div class="tminus-one" id="tm-one">00d 00:00:00</div>
     <div class="tminus-grid">
-      <div class="tminus-cell"><div class="tminus-num" id="tm-d">--</div><div class="tminus-unit">Days</div></div>
-      <div class="tminus-cell"><div class="tminus-num" id="tm-h">--</div><div class="tminus-unit">Hrs</div></div>
-      <div class="tminus-cell"><div class="tminus-num" id="tm-m">--</div><div class="tminus-unit">Min</div></div>
-      <div class="tminus-cell"><div class="tminus-num" id="tm-s">--</div><div class="tminus-unit">Sec</div></div>
+      <div class="tminus-cell"><div class="tminus-num" id="tm-d">00</div><div class="tminus-unit">Days</div></div>
+      <div class="tminus-cell"><div class="tminus-num" id="tm-h">00</div><div class="tminus-unit">Hrs</div></div>
+      <div class="tminus-cell"><div class="tminus-num" id="tm-m">00</div><div class="tminus-unit">Min</div></div>
+      <div class="tminus-cell"><div class="tminus-num" id="tm-s">00</div><div class="tminus-unit">Sec</div></div>
     </div>
     <div class="tminus-sub">Leave · <strong>Sep 27 · 12:25 PM ET</strong></div>
   </div>
@@ -2135,48 +2133,12 @@ const map = L.map('map', {
     }, 1500);
   }, true);
 })();
-// Keep Back to Hub pinned to the map corner: above pins, under popups.
-(function mountHubLink() {
+// Back to Hub is a plain overlay beside the map, not inside a Leaflet pane.
+(function pinHubLink() {
   var link = document.getElementById('btnHub');
-  if (!link) return;
-  var pane = map.createPane('hubnav');
-  pane.appendChild(link);
-  var mapPane = map.getPane('mapPane');
-  var running = false;
-  function syncHubLink() {
-    var t = getComputedStyle(mapPane).transform;
-    var ox = link.offsetLeft;
-    var oy = link.offsetTop;
-    if (!t || t === 'none') { link.style.transform = 'none'; return; }
-    var is3d = t.indexOf('matrix3d') === 0;
-    var nums = t.slice(t.indexOf('(') + 1, t.length - 1).split(',').map(parseFloat);
-    var a, b, c, d, tx, ty;
-    if (is3d) {
-      a = nums[0]; b = nums[1]; c = nums[4]; d = nums[5]; tx = nums[12]; ty = nums[13];
-    } else {
-      a = nums[0]; b = nums[1]; c = nums[2]; d = nums[3]; tx = nums[4]; ty = nums[5];
-    }
-    var det = a * d - b * c;
-    if (!det) return;
-    var ia = d / det, ib = -b / det, ic = -c / det, id = a / det;
-    var itx = (ia * ox + ic * oy) - (ia * tx + ic * ty) - ox;
-    var ity = (ib * ox + id * oy) - (ib * tx + id * ty) - oy;
-    link.style.transformOrigin = '0 0';
-    link.style.transform = 'matrix(' + ia + ',' + ib + ',' + ic + ',' + id + ',' + itx + ',' + ity + ')';
-  }
-  function frame() {
-    syncHubLink();
-    if (running) requestAnimationFrame(frame);
-  }
-  function start() { if (!running) { running = true; frame(); } }
-  function stop() { running = false; syncHubLink(); }
-  ['pointerdown', 'mousedown', 'touchstart', 'click', 'dblclick', 'contextmenu'].forEach(function(type) {
-    link.addEventListener(type, function(ev) { ev.stopPropagation(); });
-  });
-  map.on('movestart zoomstart', start);
-  map.on('moveend zoomend viewreset resize', stop);
-  map.whenReady(syncHubLink);
-  syncHubLink();
+  if (!link || typeof L === 'undefined' || !L.DomEvent) return;
+  L.DomEvent.disableClickPropagation(link);
+  if (L.DomEvent.disableScrollPropagation) L.DomEvent.disableScrollPropagation(link);
 })();
 // Zoom with Ctrl/⌘ + scroll (or the +/- buttons / pinch)
 map.getContainer().addEventListener('wheel', function(e) {
@@ -3320,36 +3282,138 @@ FOOD_POIS.forEach(p => {
 
 
 
-/* T-minus to leave-by (America/New_York) */
+/* T-minus to the next stop check-in / leave-by (America/New_York).
+   Stops in this page only have dates. A stop with no clock time uses
+   4:00 PM ET on its check-in date. Home departure keeps the 12:25 PM ET
+   leave-by already shown on this screen. After the last night, Done. */
 (function setupTminus(){
   const el = document.getElementById('tminus');
   if (!el) return;
-  // 2026-09-27 12:25:00 America/New_York = EDT (UTC-4) → 16:25:00Z
-  const TARGET = Date.parse('2026-09-27T16:25:00.000Z');
   const pad = (n) => String(Math.max(0, n)).padStart(2, '0');
   const dEl = document.getElementById('tm-d');
   const hEl = document.getElementById('tm-h');
   const mEl = document.getElementById('tm-m');
   const sEl = document.getElementById('tm-s');
   const oneEl = document.getElementById('tm-one');
-  if (!dEl || !hEl || !mEl || !sEl) return;
+  const kickerEl = el.querySelector('.tminus-kicker > span');
+  if (!dEl || !hEl || !mEl || !sEl || !oneEl) return;
   const sub = el.querySelector('.tminus-sub');
-  function tick(){
-    const now = Date.now();
-    let ms = TARGET - now;
-    if (ms <= 0) {
-      // trip underway — show zeros / live state until end date; keep ticking past as "day of"
-      const underway = now < Date.parse('2026-10-10T23:59:59.000Z');
-      el.classList.toggle('is-done', !underway);
-      el.classList.toggle('is-live', underway);
-      dEl.textContent = '00'; hEl.textContent = '00'; mEl.textContent = '00'; sEl.textContent = '00';
-      if (sub) sub.innerHTML = underway
-        ? 'Trip is <strong>live</strong> · Sep 27 – Oct 10'
-        : 'Trip <strong>complete</strong> · see you next coast';
-      return;
+
+  const etPartsFmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    hourCycle: 'h23',
+    year: 'numeric', month: '2-digit', day: '2-digit',
+    hour: '2-digit', minute: '2-digit', second: '2-digit'
+  });
+  const etLabelFmt = new Intl.DateTimeFormat('en-US', {
+    timeZone: 'America/New_York',
+    month: 'short', day: 'numeric',
+    hour: 'numeric', minute: '2-digit',
+    hour12: true
+  });
+  function etParts(ms) {
+    const got = {};
+    etPartsFmt.formatToParts(new Date(ms)).forEach(p => {
+      if (p.type !== 'literal') got[p.type] = p.value;
+    });
+    return got;
+  }
+  function wallToUtc(dateStr, hour, minute, second) {
+    const bits = String(dateStr).split('-').map(Number);
+    const y = bits[0], mo = bits[1], d = bits[2];
+    const sec = second || 0;
+    if (!y || !mo || !d) return NaN;
+    let utc = Date.UTC(y, mo - 1, d, hour + 4, minute, sec);
+    for (let i = 0; i < 4; i++) {
+      const got = etParts(utc);
+      const gh = got.hour === '24' ? 0 : +got.hour;
+      const gotAsUtc = Date.UTC(+got.year, +got.month - 1, +got.day, gh, +got.minute, +got.second);
+      const want = Date.UTC(y, mo - 1, d, hour, minute, sec);
+      const diff = want - gotAsUtc;
+      if (!diff) return utc;
+      utc += diff;
     }
-    el.classList.remove('is-live', 'is-done');
-    const sec = Math.floor(ms / 1000);
+    return utc;
+  }
+  function labelFromMs(ms) {
+    const parts = {};
+    etLabelFmt.formatToParts(new Date(ms)).forEach(p => { parts[p.type] = p.value; });
+    return parts.month + ' ' + parts.day + ' · ' + parts.hour + ':' + (parts.minute || '00') + ' ' + parts.dayPeriod + ' ET';
+  }
+  function dateLabel(dateStr) {
+    const parts = {};
+    etLabelFmt.formatToParts(new Date(wallToUtc(dateStr, 12, 0, 0))).forEach(p => { parts[p.type] = p.value; });
+    return (parts.month || '') + ' ' + (parts.day || '');
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function clockInText(text) {
+    const m = String(text).match(/(\d{1,2}):(\d{2})\s*(a\.?m\.?|p\.?m\.?)?/i);
+    if (!m) return null;
+    let h = +m[1];
+    const minute = +m[2];
+    const ap = (m[3] || '').replace(/\./g, '').toLowerCase();
+    if (ap === 'pm' && h < 12) h += 12;
+    if (ap === 'am' && h === 12) h = 0;
+    if (h > 23 || minute > 59) return null;
+    return { h: h, minute: minute };
+  }
+  function explicitInstant(stop) {
+    const keyed = [
+      ['leaveBy', 'Leave by'], ['leave_by', 'Leave by'], ['leave', 'Leave by'],
+      ['checkinAt', 'Check in'], ['checkin_at', 'Check in'],
+      ['arriveAt', 'Check in'], ['arrive', 'Check in']
+    ];
+    for (let i = 0; i < keyed.length; i++) {
+      const raw = stop[keyed[i][0]];
+      if (raw == null || raw === '') continue;
+      const text = String(raw).trim();
+      if (/^\d{4}-\d{2}-\d{2}T/.test(text)) {
+        const t = Date.parse(text);
+        if (!Number.isNaN(t)) return { at: t, kind: keyed[i][1] };
+      }
+      const dateM = text.match(/(\d{4}-\d{2}-\d{2})/);
+      const clock = clockInText(text);
+      const day = (dateM && dateM[1]) || stop.start;
+      if (clock && day) return { at: wallToUtc(day, clock.h, clock.minute, 0), kind: keyed[i][1] };
+    }
+    return null;
+  }
+
+  const milestones = [];
+  // 2026-09-27 12:25 PM America/New_York — the leave-by printed on this screen.
+  const departAt = wallToUtc('2026-09-27', 12, 25, 0);
+  if (!Number.isNaN(departAt)) {
+    milestones.push({ at: departAt, html: 'Leave · <strong>Sep 27 · 12:25 PM ET</strong>' });
+  }
+  const list = (typeof stops !== 'undefined' && stops) ? stops : [];
+  list.forEach(s => {
+    if (!s || !s.start) return;
+    const explicit = explicitInstant(s);
+    const at = explicit ? explicit.at : wallToUtc(s.start, 16, 0, 0);
+    if (Number.isNaN(at)) return;
+    const kind = explicit ? explicit.kind : 'Check in';
+    const name = esc(s.short || s.name || 'Next stop');
+    milestones.push({
+      at: at,
+      html: kind + ' · <strong>' + name + ' · ' + esc(labelFromMs(at)) + '</strong>'
+    });
+  });
+  milestones.sort((a, b) => a.at - b.at);
+
+  const last = list.length ? list[list.length - 1] : null;
+  const endDate = (last && last.end) || '2026-10-10';
+  const tripOverAt = wallToUtc(endDate, 23, 59, 59);
+  const endNice = dateLabel(endDate);
+
+  function paintCount(ms, html, live) {
+    el.classList.toggle('is-live', !!live);
+    el.classList.remove('is-done');
+    if (kickerEl) kickerEl.textContent = 'T-minus';
+    const sec = Math.max(0, Math.floor(ms / 1000));
     const days = Math.floor(sec / 86400);
     const hrs = Math.floor((sec % 86400) / 3600);
     const mins = Math.floor((sec % 3600) / 60);
@@ -3358,11 +3422,37 @@ FOOD_POIS.forEach(p => {
     hEl.textContent = pad(hrs);
     mEl.textContent = pad(mins);
     sEl.textContent = pad(secs);
-    if (oneEl) oneEl.textContent = pad(days) + 'd ' + pad(hrs) + ':' + pad(mins) + ':' + pad(secs);
-    const one = document.getElementById('tm-one');
-    if (one) one.textContent = pad(days) + 'd ' + pad(hrs) + ':' + pad(mins) + ':' + pad(secs);
+    oneEl.textContent = pad(days) + 'd ' + pad(hrs) + ':' + pad(mins) + ':' + pad(secs);
+    if (sub) sub.innerHTML = html;
   }
-  // Start compact on phones; tap to expand/collapse
+  function paintDone() {
+    el.classList.add('is-done');
+    el.classList.remove('is-live');
+    if (kickerEl) kickerEl.textContent = 'Done';
+    dEl.textContent = '00';
+    hEl.textContent = '00';
+    mEl.textContent = '00';
+    sEl.textContent = '00';
+    oneEl.textContent = 'Done';
+    if (sub) sub.innerHTML = 'Trip <strong>complete</strong> · Sep 27 – ' + esc(endNice.trim());
+  }
+  function tick() {
+    const now = Date.now();
+    let next = null;
+    for (let i = 0; i < milestones.length; i++) {
+      if (milestones[i].at > now) { next = milestones[i]; break; }
+    }
+    if (next) {
+      const started = milestones.length && now >= milestones[0].at;
+      paintCount(next.at - now, next.html, started);
+      return;
+    }
+    if (!Number.isNaN(tripOverAt) && now < tripOverAt) {
+      paintCount(tripOverAt - now, 'Trip ends · <strong>' + esc(endNice.trim()) + '</strong>', true);
+      return;
+    }
+    paintDone();
+  }
   const mq = window.matchMedia('(max-width:900px)');
   function syncCompact(){ if (mq.matches) el.classList.add('compact'); }
   syncCompact();
