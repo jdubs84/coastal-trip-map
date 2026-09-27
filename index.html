@@ -1343,6 +1343,16 @@ svg.leaflet-image-layer.leaflet-interactive path {
 .leaflet-container .leaflet-popup-content p:last-child { margin-bottom: 0 !important; }
 .leaflet-container .leaflet-popup-content a {
   color: #5fd0d8 !important;
+  cursor: pointer;
+  pointer-events: auto;
+  touch-action: manipulation;
+  position: relative;
+  z-index: 1;
+}
+.leaflet-popup-content,
+.leaflet-popup-content-wrapper {
+  pointer-events: auto;
+  touch-action: manipulation;
 }
 .leaflet-container a.leaflet-popup-close-button {
   top: 8px !important;
@@ -2018,6 +2028,107 @@ const map = L.map('map', {
   tapTolerance:15,
   bounceAtZoomLimits:false
 });
+
+// iPhone Safari and the Home Screen web app often do nothing with target=_blank
+// links to maps.apple.com / google.com/maps. On iOS only, open the app URL.
+// Desktop keeps the https link and target=_blank.
+(function installIosMapsLinks() {
+  function isIos() {
+    var ua = navigator.userAgent || '';
+    if (/iPhone|iPad|iPod/.test(ua)) return true;
+    return navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1;
+  }
+  function linkFromEvent(ev) {
+    var el = ev.target;
+    if (!el) return null;
+    if (el.nodeType !== 1) el = el.parentElement;
+    if (!el || !el.closest) return null;
+    return el.closest('a');
+  }
+  function mapsHref(a) {
+    if (!a) return '';
+    var href = a.getAttribute('href') || '';
+    if (href.indexOf('https://maps.apple.com/') === 0 ||
+        href.indexOf('https://www.google.com/maps') === 0 ||
+        href.indexOf('https://maps.google.com') === 0) return href;
+    href = a.href || '';
+    if (href.indexOf('https://maps.apple.com/') === 0 ||
+        href.indexOf('https://www.google.com/maps') === 0 ||
+        href.indexOf('https://maps.google.com') === 0) return href;
+    return '';
+  }
+  function appleAppUrl(href) {
+    return href.replace(/^https:\/\/maps\.apple\.com\//, 'maps://');
+  }
+  function googleAppUrl(href) {
+    var u = new URL(href);
+    var sp = u.searchParams;
+    var origin = sp.get('origin') || sp.get('saddr') || '';
+    var dest = sp.get('destination') || sp.get('daddr') || '';
+    var parts = u.pathname.split('/').filter(Boolean);
+    var dirAt = parts.indexOf('dir');
+    if (dirAt >= 0) {
+      if (!origin && parts[dirAt + 1]) origin = decodeURIComponent(parts[dirAt + 1].replace(/\+/g, ' '));
+      if (!dest && parts[dirAt + 2]) dest = decodeURIComponent(parts[dirAt + 2].replace(/\+/g, ' '));
+    }
+    var isDir = dirAt >= 0 || sp.has('saddr') || sp.has('daddr') || sp.has('origin') || sp.has('destination');
+    if (isDir) {
+      var mode = sp.get('directionsmode') || sp.get('travelmode') || '';
+      if (!mode) {
+        var flg = (sp.get('dirflg') || '').charAt(0);
+        mode = ({ d: 'driving', w: 'walking', b: 'bicycling', r: 'transit' })[flg] || 'driving';
+      }
+      return 'comgooglemaps://?saddr=' + encodeURIComponent(origin) +
+        '&daddr=' + encodeURIComponent(dest) +
+        '&directionsmode=' + encodeURIComponent(mode);
+    }
+    var q = sp.get('query');
+    if (q == null) q = '';
+    if (!q) q = sp.get('q') || '';
+    if (!q) {
+      var placeAt = parts.indexOf('place');
+      if (placeAt >= 0 && parts[placeAt + 1]) q = decodeURIComponent(parts[placeAt + 1].replace(/\+/g, ' '));
+    }
+    return 'comgooglemaps://?q=' + encodeURIComponent(q);
+  }
+
+  // Keep taps on popup links from starting a map drag (which cancels the click on iOS).
+  if (typeof L !== 'undefined' && L.DomEvent && L.DomEvent.disableClickPropagation) {
+    map.on('popupopen', function (e) {
+      var popup = e.popup;
+      if (!popup) return;
+      var content = popup._contentNode;
+      var root = popup.getElement ? popup.getElement() : popup._container;
+      if (content && !content._leaflet_disable_click) L.DomEvent.disableClickPropagation(content);
+      if (root && root !== content && !root._leaflet_disable_click) L.DomEvent.disableClickPropagation(root);
+    });
+  }
+
+  if (!isIos()) return;
+
+  var googleFallback = 0;
+  document.addEventListener('click', function (ev) {
+    var href = mapsHref(linkFromEvent(ev));
+    if (!href) return;
+    ev.preventDefault();
+    ev.stopPropagation();
+    clearTimeout(googleFallback);
+    if (href.indexOf('https://maps.apple.com/') === 0) {
+      window.location.href = appleAppUrl(href);
+      return;
+    }
+    var httpsUrl = href;
+    try {
+      window.location.href = googleAppUrl(href);
+    } catch (err) {
+      window.location.href = httpsUrl;
+      return;
+    }
+    googleFallback = setTimeout(function () {
+      if (document.visibilityState === 'visible') window.location.href = httpsUrl;
+    }, 1500);
+  }, true);
+})();
 // Keep Back to Hub pinned to the map corner: above pins, under popups.
 (function mountHubLink() {
   var link = document.getElementById('btnHub');
