@@ -341,6 +341,10 @@
 .gas-poi-icon{z-index:710 !important; background:transparent !important; border:none !important}
 .gas-poi-icon div{position:relative;z-index:711;background-clip:padding-box}
 .leaflet-gaspins-pane{z-index:710 !important}
+.rest-poi-icon{z-index:705 !important; background:transparent !important; border:none !important}
+.rest-poi-icon div{position:relative;z-index:706;background-clip:padding-box}
+.leaflet-restpins-pane{z-index:705 !important}
+.food-layers label.rest-toggle { flex-wrap:nowrap; white-space:nowrap; }
 .gas-refresh {
   display:inline-flex; align-items:center; justify-content:center;
   border:1px solid var(--line); background:rgba(255,255,255,.04); color:var(--ink);
@@ -1560,6 +1564,7 @@ html, body {
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
     <label title="Panera Bread"><input type="checkbox" id="chkPanera"> <span class="sw" style="background:#7cb342"></span> Panera</label>
     <label title="Restaurants"><input type="checkbox" id="chkRestaurants"> <span class="sw" style="background:#16a085"></span> Restaurants</label>
+    <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" checked> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
     <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
     <p class="gas-note" id="gasNote" hidden></p>
@@ -1694,6 +1699,7 @@ html, body {
   <div class="brand"><strong>Driving route on roads</strong><span>1024.4 miles · 23h 06m · Home → FL → NC</span></div>
 </div>
 <script src="gas-prices.js?v=7"></script>
+<script src="rest-areas.js?v=1"></script>
 <script>
 const home = {"lat": 27.911904, "lon": -82.817489, "address": "3007 Bluffs Drive, Largo, FL 33770"};
 /* Arrival pins geocoded 2026-09-26 with OpenStreetMap Nominatim
@@ -4228,6 +4234,128 @@ FOOD_POIS.forEach(p => {
   setOn(chk.checked);
   if (chk.checked) show();
   window.__signalLayer = { show, get carrier(){ return carrier; }, url: SIGNAL_URL };
+})();
+
+/* Rest areas baked in rest-areas.js (OpenStreetMap, not a live Overpass call).
+   On by default. Popups use the same Apple / Google https links as the other layers
+   so the iOS capture-phase handler can rewrite them. */
+(function setupRestAreas(){
+  const chk = document.getElementById('chkRest');
+  const countEl = document.getElementById('restCount');
+  if (!chk || typeof map === 'undefined' || typeof L === 'undefined' || typeof REST_AREAS === 'undefined') return;
+  if (countEl) countEl.textContent = 'Rest areas (' + REST_AREAS.length + ')';
+  if (!map.getPane('restpins')) {
+    map.createPane('restpins');
+    map.getPane('restpins').style.zIndex = '705';
+  }
+  const layer = L.layerGroup();
+  const icon = L.divIcon({
+    className: 'rest-poi-icon',
+    html: '<div style="width:22px;height:22px;border-radius:50%;background:#1d4e89;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" aria-hidden="true"><circle cx="6" cy="2.15" r="1.45" fill="#fff"/><path fill="#fff" d="M3.55 4.55h4.9c.28 0 .48.28.4.55L8.05 7.7V11H3.95V7.7L3.15 5.1c-.08-.27.12-.55.4-.55z"/></svg></div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  function fallbackName(p) {
+    if (p.name) return p.name;
+    if (p.kind === 'services') return 'Service area';
+    if (p.kind === 'welcome') return 'Welcome center';
+    return 'Rest area';
+  }
+  function kindLabel(p) {
+    if (p.kind === 'services') return 'Service area';
+    if (p.kind === 'welcome') return 'Welcome center';
+    return 'Rest area';
+  }
+  function dirText(d) {
+    if (!d) return '';
+    if (d === 'both') return 'Both directions';
+    return d;
+  }
+  const amenityLabel = {
+    toilets: 'Toilets',
+    drinking_water: 'Drinking water',
+    picnic_table: 'Picnic tables',
+    bin: 'Trash bins',
+    shower: 'Showers',
+    vending: 'Vending',
+    wheelchair: 'Wheelchair',
+    compressed_air: 'Compressed air',
+    internet_access: 'Internet',
+    fuel: 'Fuel',
+    hgv: 'Trucks',
+    access: 'Access',
+    motorcar: 'Cars',
+    playground: 'Playground',
+    telephone: 'Telephone',
+    dog: 'Dogs',
+    food: 'Food',
+    restaurant: 'Restaurant',
+    fast_food: 'Fast food',
+    cafe: 'Cafe',
+    sanitary_dump_station: 'Dump station',
+    charging_station: 'Charging',
+    water_point: 'Water',
+    waste: 'Waste',
+    parking: 'Parking',
+    caravan: 'Caravan',
+    motorhome: 'Motorhome'
+  };
+  function amenityText(p) {
+    const a = p.amenities || {};
+    return Object.keys(a).map(k => {
+      const label = amenityLabel[k] || k.replace(/_/g, ' ');
+      return label + ': ' + a[k];
+    }).join(' · ');
+  }
+  function popupHtml(p) {
+    const name = fallbackName(p);
+    const where = [kindLabel(p), p.highway, dirText(p.direction)].filter(Boolean).join(' · ');
+    const meta = [p.operator, p.ref ? ('Ref ' + p.ref) : ''].filter(Boolean).join(' · ');
+    const caution = p.caution ? '<p><strong>' + esc(p.caution) + '</strong></p>' : '';
+    const am = amenityText(p);
+    const hours = p.opening_hours ? '<p>' + esc(p.opening_hours) + '</p>' : '';
+    const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(name) + '&ll=' + p.lat + ',' + p.lon;
+    const google = 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon;
+    return '<div class="popup"><h3>' + esc(name) + '</h3>' +
+      '<p>' + esc(where) + '</p>' +
+      (meta ? '<p>' + esc(meta) + '</p>' : '') +
+      caution +
+      (am ? '<p>' + esc(am) + '</p>' : '') +
+      hours +
+      '<p><a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a> · <a href="' + google + '" target="_blank" rel="noopener">Google Maps</a></p></div>';
+  }
+  REST_AREAS.forEach(p => {
+    const name = fallbackName(p);
+    const marker = L.marker([p.lat, p.lon], {
+      icon, pane: 'restpins', zIndexOffset: 850, riseOnHover: true
+    });
+    marker.bindPopup(popupHtml(p), {
+      maxWidth: 280,
+      autoPanPaddingTopLeft: L.point(24, 72),
+      autoPanPaddingBottomRight: L.point(24, 120)
+    });
+    marker.bindTooltip(name, { direction: 'top', offset: [0, -8] });
+    marker.addTo(layer);
+    p.marker = marker;
+  });
+  function setOn(on) {
+    const lab = chk.closest('label');
+    if (lab) lab.classList.toggle('on', !!on);
+  }
+  function apply() {
+    const on = !!chk.checked;
+    setOn(on);
+    if (on) { if (!map.hasLayer(layer)) map.addLayer(layer); }
+    else if (map.hasLayer(layer)) map.removeLayer(layer);
+  }
+  chk.addEventListener('change', apply);
+  apply();
+  window.__restAreas = { count: REST_AREAS.length, layer: layer };
 })();
 </script>
 </body>
