@@ -380,4 +380,27 @@ assert.match(html, /function paintPrices\(/);
 assert.match(html, /function priceNote\(/);
 assert.match(html, /Price feed timed out/);
 
+const lodging = JSON.parse(html.match(/const stops = (\[[\s\S]*?\]);/)[1]);
+assert.equal(Feed.boxesForStops(tiles, lodging, 15).length, 0, "lodging stops already sit inside the route price tiles");
+const farTiles = Feed.boxesForStops(tiles, [{ lat: 40.2, lon: -100.4 }], 15);
+assert.equal(farTiles.length, 1, "a stop outside the route pad adds one tile");
+farTiles.forEach(box => {
+  const s = spans(box);
+  assert.ok(s.lon <= Feed.PRICE_MAX_SPAN + 1e-6 && s.lat <= Feed.PRICE_MAX_SPAN + 1e-6);
+  assert.ok(covers(box, 40.2, -100.4));
+});
+assert.match(html, /stops:\s*stops/);
+assert.match(html, /stopRadiusMi:\s*15/);
+assert.match(html, /Cheap near /);
+assert.match(html, /const NEAR_STOP_MI = 15/);
+assert.match(html, /id="chkRoad" checked/);
+assert.doesNotMatch(html, /id="chkGas" checked/);
+assert.doesNotMatch(html, /id="chkRest" checked/);
+assert.match(html, /32\.6185351/);
+assert.match(html, /-80\.7804583/);
+assert.match(html, /31\.3048702/);
+assert.match(html, /-81\.4564336/);
+assert.match(html, /31\.3638645/);
+assert.match(html, /-81\.4146948/);
+
 console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests, max in flight " + maxInflight + ")");

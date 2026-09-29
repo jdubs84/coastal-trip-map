@@ -67,6 +67,50 @@
     return s.lon <= maxSpan + 1e-9 && s.lat <= maxSpan + 1e-9;
   }
 
+  function pointInBox(box, lat, lon) {
+    return lon >= box[0] - 1e-9 && lon <= box[2] + 1e-9 && lat >= box[1] - 1e-9 && lat <= box[3] + 1e-9;
+  }
+
+  function milesBox(lat, lon, miles) {
+    var dLat = miles / 69.172;
+    var cos = Math.cos(lat * Math.PI / 180);
+    var dLon = miles / (69.172 * Math.max(0.2, cos));
+    return [lon - dLon, lat - dLat, lon + dLon, lat + dLat];
+  }
+
+  function radiusCovered(tiles, lat, lon, miles) {
+    var box = milesBox(lat, lon, miles);
+    var samples = [
+      [lat, lon],
+      [box[3], lon], [box[1], lon], [lat, box[2]], [lat, box[0]],
+      [box[3], box[2]], [box[3], box[0]], [box[1], box[2]], [box[1], box[0]]
+    ];
+    for (var i = 0; i < samples.length; i++) {
+      var hit = false;
+      for (var t = 0; t < tiles.length; t++) {
+        if (pointInBox(tiles[t], samples[i][0], samples[i][1])) { hit = true; break; }
+      }
+      if (!hit) return false;
+    }
+    return true;
+  }
+
+  // One small tile per stop whose 15-mile box is not already inside the route tiles.
+  function boxesForStops(tiles, stops, miles, maxSpan) {
+    if (miles == null) miles = 15;
+    if (maxSpan == null) maxSpan = PRICE_MAX_SPAN;
+    var extra = [];
+    (stops || []).forEach(function (s) {
+      var lat = +s.lat, lon = +s.lon;
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return;
+      if (radiusCovered(tiles, lat, lon, miles)) return;
+      boxesFromBbox(milesBox(lat, lon, miles), maxSpan, Math.min(0.15, maxSpan / 4)).forEach(function (b) {
+        extra.push(b);
+      });
+    });
+    return extra;
+  }
+
   function boxesAlongRoute(latLngs, maxSpan, pad, overlap) {
     if (maxSpan == null) maxSpan = PRICE_MAX_SPAN;
     if (pad == null) pad = PRICE_PAD;
@@ -429,6 +473,11 @@
   async function fetchTiledPrices(latLngs, opts) {
     opts = opts || {};
     var boxes = boxesAlongRoute(latLngs, opts.maxSpan, opts.pad, opts.overlap);
+    if (opts.stops && opts.stops.length) {
+      boxesForStops(boxes, opts.stops, opts.stopRadiusMi == null ? 15 : opts.stopRadiusMi, opts.maxSpan).forEach(function (b) {
+        boxes.push(b);
+      });
+    }
     var normalize = opts.normalize || function (s) { return s; };
     var limit = opts.concurrency == null ? PRICE_FETCH_CONCURRENCY : Math.max(1, opts.concurrency | 0);
     var results = await mapPool(boxes, limit, function (box) {
@@ -447,6 +496,8 @@
     splitAxis: splitAxis,
     boxesFromBbox: boxesFromBbox,
     boxesAlongRoute: boxesAlongRoute,
+    boxesForStops: boxesForStops,
+    radiusCovered: radiusCovered,
     dedupePriceStations: dedupePriceStations,
     combineTileResults: combineTileResults,
     priceUrl: priceUrl,
