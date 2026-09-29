@@ -1686,15 +1686,17 @@ html, body {
   }
   .leaflet-container .leaflet-popup-content,
   .leaflet-popup-content {
-    width:auto !important;
+    width:min(82vw, 340px) !important;
     max-width:90vw !important;
     max-height:min(52vh, 460px) !important;
     overflow-y:auto !important;
     -webkit-overflow-scrolling:touch;
-    margin:12px 14px 14px !important;
-    padding-right:28px;
+    margin:12px 12px 14px !important;
+    padding-right:32px;
+    box-sizing:border-box;
     font-size:14px !important;
     line-height:1.4 !important;
+    white-space:normal;
   }
   .leaflet-popup-content h3,
   .leaflet-popup-content .popup h3,
@@ -1720,6 +1722,8 @@ html, body {
     display:flex;
     align-items:center;
     justify-content:center;
+    width:100%;
+    box-sizing:border-box;
     min-height:44px;
     padding:10px 14px;
     border-radius:12px;
@@ -2365,11 +2369,19 @@ map.on('popupopen', function (e) {
   if (!popup || popup._iosFitting || window.innerWidth > 600) return;
   popup._iosFitting = true;
   var max = Math.max(240, Math.round(window.innerWidth * 0.9));
+  var sheet = document.getElementById("tripSheet");
+  var sheetH = 0;
+  if (sheet) {
+    var rect = sheet.getBoundingClientRect();
+    if (rect.top < window.innerHeight) sheetH = Math.max(0, window.innerHeight - rect.top);
+  }
+  var maxH = Math.max(140, Math.round(window.innerHeight * 0.45));
+  if (sheetH > 80) maxH = Math.max(140, Math.min(maxH, window.innerHeight - sheetH - 96));
   popup.options.maxWidth = max;
   popup.options.minWidth = Math.min(260, max);
-  popup.options.maxHeight = Math.max(160, Math.round(window.innerHeight * 0.5));
+  popup.options.maxHeight = maxH;
   popup.options.autoPanPaddingTopLeft = L.point(8, 88);
-  popup.options.autoPanPaddingBottomRight = L.point(8, 130);
+  popup.options.autoPanPaddingBottomRight = L.point(8, Math.max(24, sheetH + 12));
   popup.update();
   popup._iosFitting = false;
 });
