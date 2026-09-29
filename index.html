@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:gas-worker-20260924 -->
+<html lang="en"><!-- build:road-stops-20260929 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -344,6 +344,9 @@
 .rest-poi-icon{z-index:705 !important; background:transparent !important; border:none !important}
 .rest-poi-icon div{position:relative;z-index:706;background-clip:padding-box}
 .leaflet-restpins-pane{z-index:705 !important}
+.road-poi-icon{z-index:725 !important; background:transparent !important; border:none !important}
+.road-poi-icon div{position:relative;z-index:726;background-clip:padding-box}
+.leaflet-roadpins-pane{z-index:725 !important}
 .food-layers label.rest-toggle { flex-wrap:nowrap; white-space:nowrap; }
 .gas-refresh {
   display:inline-flex; align-items:center; justify-content:center;
@@ -1557,12 +1560,13 @@ html, body {
   </div>
   <div class="food-layers" id="foodLayers" aria-label="Map layers">
     <label title="Along-the-way sights"><input type="checkbox" id="chkSights"> <span class="sw" style="background:#9b59d0"></span> Sights</label>
+    <label class="road-toggle" title="Old Sheldon Church Ruins, Hofwyl-Broadfield Plantation, and Fort King George, on the drive from Anastasia to Edisto"><input type="checkbox" id="chkRoad" checked> <span class="sw" style="background:#a15c38"></span> Road stops</label>
     <label title="Buc-ee's"><input type="checkbox" id="chkBucees"> <span class="sw" style="background:#d4af37"></span> Buc-ee's</label>
     <label title="Cook Out"><input type="checkbox" id="chkCookout"> <span class="sw" style="background:#e67e22"></span> Cook Out</label>
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
     <label title="Panera Bread"><input type="checkbox" id="chkPanera"> <span class="sw" style="background:#7cb342"></span> Panera</label>
     <label title="Restaurants"><input type="checkbox" id="chkRestaurants"> <span class="sw" style="background:#16a085"></span> Restaurants</label>
-    <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" checked> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
+    <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" autocomplete="off"> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
     <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
     <p class="gas-note" id="gasNote" hidden></p>
@@ -1696,7 +1700,7 @@ html, body {
   <button type="button" class="btn-locate" id="btnLocate" title="Show my live location" aria-label="Show my live location">◎</button>
   <div class="brand"><strong>Driving route on roads</strong><span>1024.4 miles · 23h 06m · Home → FL → NC</span></div>
 </div>
-<script src="gas-prices.js?v=7"></script>
+<script src="gas-prices.js?v=8"></script>
 <script src="rest-areas.js?v=1"></script>
 <script>
 const home = {"lat": 27.911904, "lon": -82.817489, "address": "3007 Bluffs Drive, Largo, FL 33770"};
@@ -3808,8 +3812,12 @@ FOOD_POIS.forEach(p => {
       signal: signal,
       // The Worker answers small boxes, then GasBuddy cell-errors the rest if
       // the whole route is fired at once. Two at a time, with a short gap.
+      // Route tiles already cover ~15 miles around each lodging stop. A stop
+      // that sits outside that pad gets one extra small tile, not a new grid.
       concurrency: 2,
       gap: 450,
+      stops: stops,
+      stopRadiusMi: 15,
       normalize: normalizePriceStation,
       fetcher: async function (url, sig) {
         const timeoutMs = 12000;
@@ -3897,9 +3905,15 @@ FOOD_POIS.forEach(p => {
     const seen = new Set();
     function take(s) {
       const k = dedupeKey(s);
-      if (seen.has(k)) return;
-      seen.add(k);
+      if (seen.has(k)) {
+        for (let i = 0; i < picked.length; i++) {
+          if (dedupeKey(picked[i]) === k) return picked[i];
+        }
+      } else {
+        seen.add(k);
+      }
       picked.push(s);
+      return s;
     }
     const keys = Array.from(bins.keys()).sort((a, b) => a - b);
     keys.forEach(k => {
@@ -3920,6 +3934,39 @@ FOOD_POIS.forEach(p => {
       if (list[1]) take(list[1]);
     });
     if (picked.length > 46) picked.splice(46);
+    // Cheapest regular-price stations within 15 miles of each lodging stop.
+    // Added after the bin cap so a cheap station near a departure is not dropped.
+    // Prices and names come from the stations already fetched; nothing is hardcoded.
+    const NEAR_STOP_MI = 15;
+    stops.forEach(stop => {
+      const label = stop.short || stop.name;
+      const nearby = [];
+      raw.forEach(s => {
+        const price = numPrice(s.regular);
+        if (price == null) return;
+        const d = haversineMi(s.lat, s.lon, stop.lat, stop.lon);
+        if (d > NEAR_STOP_MI) return;
+        nearby.push({ s, d, price });
+      });
+      nearby.sort((a, b) => a.price - b.price || a.d - b.d);
+      nearby.slice(0, 3).forEach(item => {
+        let station = null;
+        const key = dedupeKey(item.s);
+        for (let i = 0; i < located.length; i++) {
+          if (dedupeKey(located[i]) === key) { station = located[i]; break; }
+        }
+        if (!station) {
+          const loc = locateOnRoute(item.s.lat, item.s.lon);
+          station = Object.assign({}, item.s, loc);
+          station.regular = item.price;
+          station.displayPrice = item.price;
+          station.displayGrade = "regular";
+        }
+        const kept = take(station);
+        if (!kept.cheapNear) kept.cheapNear = [];
+        if (kept.cheapNear.indexOf(label) < 0) kept.cheapNear.push(label);
+      });
+    });
     picked.sort((a, b) => a.along - b.along);
     const regulars = picked.filter(s => s.displayGrade === "regular");
     if (regulars.length) {
@@ -3975,11 +4022,12 @@ FOOD_POIS.forEach(p => {
     } else {
       price = "<p>Street price is not in this feed. Open GasBuddy for the live pump price.</p>";
     }
+    const cheapNear = (s.cheapNear || []).map(name => `<p>${esc("Cheap near " + name)}</p>`).join("");
     const q = encodeURIComponent([s.name, s.city, s.state].filter(Boolean).join(" "));
     const gb = "https://www.gasbuddy.com/home?search=" + q + "&fuel=1";
     const apple = "https://maps.apple.com/?q=" + encodeURIComponent(s.name || "gas") + "&ll=" + s.lat + "," + s.lon;
     const google = "https://www.google.com/maps/search/?api=1&query=" + s.lat + "," + s.lon;
-    return `<div class="popup"><h3>${title}</h3>${brand}${placeHtml}<p class="off-route">${esc(s.relation || "")}</p>${price}<p><a href="${gb}" target="_blank" rel="noopener">GasBuddy</a> · <a href="${apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${google}" target="_blank" rel="noopener">Google Maps</a></p></div>`;
+    return `<div class="popup"><h3>${title}</h3>${brand}${placeHtml}<p class="off-route">${esc(s.relation || "")}</p>${cheapNear}${price}<p><a href="${gb}" target="_blank" rel="noopener">GasBuddy</a> · <a href="${apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${google}" target="_blank" rel="noopener">Google Maps</a></p></div>`;
   }
 
   function focusStation(s) {
@@ -4326,8 +4374,82 @@ FOOD_POIS.forEach(p => {
   window.__signalLayer = { show, get carrier(){ return carrier; }, url: SIGNAL_URL };
 })();
 
+/* Road stops on the Tue 9/29 Anastasia → Edisto leg. On by default.
+   Coordinates are OpenStreetMap centroids from Nominatim, on the site itself:
+   Old Sheldon Church Ruins, way 1034586270 (historic=ruins), 32.6185351, -80.7804583.
+   Hofwyl-Broadfield Plantation, way 1088776489 (building, tourism=museum), 31.3048702, -81.4564336.
+   Fort King George Historic Site, way 1099757333 (historic=archaeological_site), 31.3638645, -81.4146948.
+   Popups use the same Apple / Google https links as the other layers. */
+(function setupRoadStops(){
+  const chk = document.getElementById('chkRoad');
+  if (!chk || typeof map === 'undefined' || typeof L === 'undefined') return;
+  const ROAD_STOPS = [
+    {
+      name: "Old Sheldon Church Ruins",
+      lat: 32.6185351,
+      lon: -80.7804583,
+      note: "Free ruins (1750s church), sunrise to sunset, no restrooms. Off I-95 exit 33 via US-17."
+    },
+    {
+      name: "Hofwyl-Broadfield Plantation State Historic Site",
+      lat: 31.3048702,
+      lon: -81.4564336,
+      note: "Historic rice plantation, ~$8, open Tue 9-5 (last house tour 4 PM). About 1 mi off I-95 exit 42."
+    },
+    {
+      name: "Fort King George State Historic Site",
+      lat: 31.3638645,
+      lon: -81.4146948,
+      note: "Rebuilt 1721 British fort, ~$8, open Tue 9-5. About 3 mi off I-95 exit 49."
+    }
+  ];
+  if (!map.getPane('roadpins')) {
+    map.createPane('roadpins');
+    map.getPane('roadpins').style.zIndex = '725';
+  }
+  const layer = L.layerGroup();
+  const icon = L.divIcon({
+    className: 'road-poi-icon',
+    html: '<div style="width:22px;height:22px;border-radius:50%;background:#a15c38;border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5)"></div>',
+    iconSize: [22, 22],
+    iconAnchor: [11, 11]
+  });
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  ROAD_STOPS.forEach(p => {
+    const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(p.name) + '&ll=' + p.lat + ',' + p.lon;
+    const google = 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon;
+    const html = '<div class="popup"><h3><strong>' + esc(p.name) + '</strong></h3>' +
+      '<p>' + esc(p.note) + '</p>' +
+      '<p><a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a> · <a href="' + google + '" target="_blank" rel="noopener">Google Maps</a></p></div>';
+    L.marker([p.lat, p.lon], { icon, pane: 'roadpins', zIndexOffset: 880, riseOnHover: true })
+      .bindPopup(html, {
+        maxWidth: 280,
+        autoPanPaddingTopLeft: L.point(24, 72),
+        autoPanPaddingBottomRight: L.point(24, 120)
+      })
+      .bindTooltip(p.name, { direction: 'top', offset: [0, -8] })
+      .addTo(layer);
+  });
+  function setOn(on) {
+    const lab = chk.closest('label');
+    if (lab) lab.classList.toggle('on', !!on);
+  }
+  function apply() {
+    const on = !!chk.checked;
+    setOn(on);
+    if (on) { if (!map.hasLayer(layer)) map.addLayer(layer); }
+    else if (map.hasLayer(layer)) map.removeLayer(layer);
+  }
+  chk.addEventListener('change', apply);
+  apply();
+})();
+
 /* Rest areas baked in rest-areas.js (OpenStreetMap, not a live Overpass call).
-   On by default. Popups use the same Apple / Google https links as the other layers
+   Off by default. Popups use the same Apple / Google https links as the other layers
    so the iOS capture-phase handler can rewrite them. */
 (function setupRestAreas(){
   const chk = document.getElementById('chkRest');
