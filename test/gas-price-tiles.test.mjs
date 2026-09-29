@@ -37,8 +37,11 @@ const routeSpan = spans(routeBox);
 assert.ok(routeSpan.lat > 8, "fixture is the full coastal route (lat)");
 assert.ok(routeSpan.lon > 7.5, "fixture is the full coastal route (lon)");
 
-assert.equal(Feed.PRICE_MAX_SPAN, 1.2);
-assert.equal(Feed.PRICE_FETCH_CONCURRENCY, 4);
+assert.equal(Feed.PRICE_MAX_SPAN, 1.5);
+assert.equal(Feed.PRICE_FETCH_CONCURRENCY, 2);
+assert.equal(Feed.PRICE_MAX_REQUESTS, 15);
+assert.equal(Feed.PRICE_FAILURE_BUDGET, 3);
+assert.ok(Feed.PRICE_CACHE_TTL_MS >= 30 * 60 * 1000 && Feed.PRICE_CACHE_TTL_MS <= 60 * 60 * 1000);
 assert.ok(Feed.PRICE_MAX_SPAN <= 1.5, "every price tile stays at or under 1.5°");
 const maxRequestSpan = Feed.PRICE_MAX_SPAN + 0.01;
 
@@ -358,13 +361,13 @@ assert.equal(circleK.street, "2919 Coastal Hwy");
 assert.equal(Feed.normalizeWorkerStation({ name: "Blank", lat: 29.9, lon: -81.2, regular: null }), null);
 assert.equal(Feed.normalizeWorkerStation({ name: "Absurd", lat: 29.9, lon: -81.2, regular: 40 }), null);
 assert.equal(Feed.normalizeWorkerStation({ name: "Text", lat: 29.9, lon: -81.2, regular: "nope" }), null);
-assert.match(html, /CoastalPriceFeed\.fetchTiledPrices/);
+assert.match(html, /CoastalPriceFeed\.fetchFocusedPrices/);
 assert.match(html, /CoastalPriceFeed\.priceUpdateSummary/);
 assert.match(html, /CoastalPriceFeed\.priceNoteLine/);
 assert.match(html, /cache:\s*"no-store"/);
 const gasFn = html.slice(html.indexOf("function setupGasLayer"));
 const startLoadAt = gasFn.indexOf("async function startLoad");
-const priceCallAt = gasFn.indexOf("fetchPrices(signal)", startLoadAt);
+const priceCallAt = gasFn.indexOf("fetchPrices(signal,", startLoadAt);
 const cacheReadAt = gasFn.indexOf("const cached = bypass", startLoadAt);
 assert.ok(priceCallAt > startLoadAt && priceCallAt < cacheReadAt, "price feed is requested even when OpenStreetMap locations are cached");
 const writeCacheFn = gasFn.slice(gasFn.indexOf("function writeCache"), gasFn.indexOf("async function fetchUsAvg"));
@@ -412,7 +415,8 @@ assert.match(html, /31\.8908351/);
 assert.match(html, /-81\.1960562/);
 assert.match(html, /32\.5497723/);
 assert.match(html, /-80\.2745141/);
-assert.match(html, /build:gas-picks-20260929/);
+assert.match(html, /build:gas-throttle-20260929/);
+assert.doesNotMatch(html, /build:gas-picks-20260929/);
 assert.doesNotMatch(html, /build:ios-stops-20260929/);
 assert.match(html, /id="chkGasPicks" checked/);
 assert.match(html, /Gas picks today \(9\/29\)/);
@@ -420,7 +424,156 @@ assert.match(html, /31\.214705/);
 assert.match(html, /-81\.484981/);
 assert.match(html, /29\.915975/);
 assert.match(html, /-81\.363164/);
-assert.match(html, /Gas prices as of /);
+assert.match(html, /Prices loaded \(/);
+assert.match(html, /some areas cached/);
+assert.match(html, /backoffBase:\s*800/);
+assert.match(html, /failureBudget:\s*3/);
+assert.match(html, /bypassCache/);
+assert.doesNotMatch(html, /Gas prices as of /);
 assert.doesNotMatch(html, /build:road-stops-20260929/);
 
-console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests, max in flight " + maxInflight + ")");
+const home = JSON.parse(html.match(/const home = (\{.*?\});/)[1]);
+const today = "2026-09-29";
+const focus = Feed.planPriceFetch({
+  route: drive,
+  home,
+  stops: lodging,
+  today,
+  now: Date.parse("2026-09-29T16:00:00Z")
+});
+assert.ok(focus.boxes.length >= 3 && focus.boxes.length <= 15, "today's load stays under 15 requests (saw " + focus.boxes.length + ")");
+focus.boxes.forEach((box, i) => {
+  const s = spans(box);
+  assert.ok(s.lon <= Feed.PRICE_MAX_SPAN + 1e-6 && s.lat <= Feed.PRICE_MAX_SPAN + 1e-6, "focus tile " + i);
+});
+assert.ok(focus.boxes.some(box => covers(box, 31.21, -81.49)), "Brunswick on today's I-95 leg is queried");
+assert.ok(!focus.boxes.some(box => covers(box, 27.91, -82.82)), "Largo is not queried on the St. Augustine → Edisto day");
+lodging.forEach(s => {
+  assert.ok(focus.boxes.some(box => covers(box, s.lat, s.lon)), "stop covered: " + s.short);
+});
+assert.ok(!focus.boxes.some(box => covers(box, 33.0, -79.7)), "highway between later stops is not queried today");
+const withGps = Feed.planPriceFetch({
+  route: drive,
+  home,
+  stops: lodging,
+  today,
+  gps: { lat: 36.1, lon: -75.7 },
+  now: Date.parse("2026-09-29T16:00:00Z")
+});
+assert.equal(withGps.boxes.length, focus.boxes.length + 1);
+assert.ok(withGps.boxes.length <= 15);
+assert.ok(withGps.boxes.some(box => covers(box, 36.1, -75.7)));
+const stay = Feed.planPriceFetch({
+  route: drive,
+  home,
+  stops: lodging,
+  today: "2026-10-02",
+  now: Date.parse("2026-10-02T16:00:00Z")
+});
+assert.ok(stay.boxes.length <= lodging.length);
+assert.ok(!stay.boxes.some(box => covers(box, 31.21, -81.49)), "a stay day does not query the whole I-95 corridor");
+assert.equal(Feed.driveEndpoints(home, lodging, today).destination.lat, lodging[1].lat);
+assert.equal(Feed.tripDate(Date.parse("2026-09-30T02:30:00Z")), "2026-09-29");
+
+const mem = {
+  data: {},
+  getItem(k) { return Object.prototype.hasOwnProperty.call(this.data, k) ? this.data[k] : null; },
+  setItem(k, v) { this.data[k] = String(v); }
+};
+let focusCalls = 0;
+const focusNow = Date.parse("2026-09-29T18:00:00Z");
+const firstFocus = await Feed.fetchFocusedPrices({
+  route: drive,
+  home,
+  stops: lodging,
+  today,
+  now: focusNow,
+  storage: mem,
+  gap: 0,
+  backoffBase: 0,
+  concurrency: 2,
+  base: "https://gas.here2serve.us/gas",
+  normalize,
+  fetcher: async () => {
+    focusCalls++;
+    return {
+      stations: [{ name: "Cached", lat: 31.2, lon: -81.49, regular: 3.56, updated: "2026-09-29T13:01:00Z", source: "GasBuddy" }],
+      meta: { cellErrors: 0, source: "GasBuddy (unofficial)" }
+    };
+  }
+});
+assert.equal(focusCalls, focus.boxes.length);
+assert.equal(firstFocus.requests, focus.boxes.length);
+assert.equal(firstFocus.usedCache, false);
+assert.ok(firstFocus.stations.length >= 1);
+const againCalls = focusCalls;
+const secondFocus = await Feed.fetchFocusedPrices({
+  route: drive,
+  home,
+  stops: lodging,
+  today,
+  now: focusNow + 20 * 60 * 1000,
+  storage: mem,
+  gap: 0,
+  backoffBase: 0,
+  concurrency: 2,
+  base: "https://gas.here2serve.us/gas",
+  normalize,
+  fetcher: async () => { focusCalls++; return { stations: [], meta: { cellErrors: 1 } }; }
+});
+assert.equal(focusCalls, againCalls, "a fresh cell cache is not refetched");
+assert.equal(secondFocus.requests, 0);
+assert.equal(secondFocus.fromCache, true);
+assert.equal(secondFocus.usedCache, true);
+assert.ok(secondFocus.stations.some(s => s.regular === 3.56));
+const cachedSummary = Feed.priceUpdateSummary(secondFocus, focusNow + 20 * 60 * 1000);
+assert.equal(cachedSummary.ok, true);
+assert.match(cachedSummary.text, /Prices loaded \(1 station, some areas cached\)/);
+assert.doesNotMatch(cachedSummary.text, /Price feed failed/);
+assert.doesNotMatch(cachedSummary.text, /cell errors/);
+assert.equal(cachedSummary.newest, Date.parse("2026-09-29T13:01:00Z"));
+
+let boomCalls = 0;
+const boomBoxes = [];
+for (let i = 0; i < 8; i++) boomBoxes.push([-82, 28 + i * 0.4, -80.6, 28.4 + i * 0.4]);
+const boom = await Feed.fetchTiledPrices([], {
+  boxes: boomBoxes,
+  retries: 0,
+  gap: 0,
+  backoffBase: 0,
+  concurrency: 2,
+  failureBudget: 3,
+  base: "https://gas.here2serve.us/gas",
+  normalize,
+  fetcher: async () => {
+    boomCalls++;
+    throw new Error("Price feed HTTP 429");
+  }
+});
+assert.ok(boomCalls < boomBoxes.length, "429s stop instead of fetching every cell (saw " + boomCalls + ")");
+assert.ok(boomCalls <= 6, "saw " + boomCalls);
+assert.ok(boomCalls >= 3);
+assert.equal(boom.stations.length, 0);
+assert.match(Feed.priceFailureNote(boom), /429/);
+const boomSummary = Feed.priceUpdateSummary(boom, Date.now());
+assert.equal(boomSummary.ok, false);
+assert.match(boomSummary.text, /429/);
+
+const mixed = Feed.priceUpdateSummary({
+  stations: [
+    { regular: 3.56, updated: "2026-09-29T13:01:00Z" },
+    { regular: 3.89, updated: "2026-09-29T12:00:00Z" }
+  ],
+  partial: true,
+  usedCache: true,
+  failedTiles: 2,
+  meta: { caches: [], sources: ["GasBuddy (unofficial)"], lastErrors: [], cellErrors: 4, stale: false }
+}, Date.parse("2026-09-29T18:00:00Z"));
+assert.equal(mixed.ok, true);
+assert.equal(mixed.priced, 2);
+assert.match(mixed.text, /Prices loaded \(2 stations, some areas cached\)/);
+assert.doesNotMatch(mixed.text, /Price feed failed/);
+assert.doesNotMatch(mixed.text, /cell errors/);
+assert.match(Feed.priceNoteLine(mixed, { newest: "Sep 29, 9:01 AM", oldest: "Sep 29, 8:00 AM" }), /newest report Sep 29, 9:01 AM/);
+
+console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests, max in flight " + maxInflight + ", focus boxes " + focus.boxes.length + ")");

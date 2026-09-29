@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:gas-picks-20260929 -->
+<html lang="en"><!-- build:gas-throttle-20260929 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -1930,7 +1930,7 @@ html, body {
   <button type="button" class="btn-locate" id="btnLocate" title="Show my live location" aria-label="Show my live location">◎</button>
   <div class="brand"><strong>Driving route on roads</strong><span>1024.4 miles · 23h 06m · Home → FL → NC</span></div>
 </div>
-<script src="gas-prices.js?v=8"></script>
+<script src="gas-prices.js?v=9"></script>
 <script src="rest-areas.js?v=1"></script>
 <script>
 const home = {"lat": 27.911904, "lon": -82.817489, "address": "3007 Bluffs Drive, Largo, FL 33770"};
@@ -3777,6 +3777,10 @@ FOOD_POIS.forEach(p => {
   function onPos(pos){
     const latlng = [pos.coords.latitude, pos.coords.longitude];
     const acc = Math.max(pos.coords.accuracy || 30, 20);
+    window.__coastalGps = { lat: latlng[0], lon: latlng[1] };
+    if (typeof window.__onCoastalGps === "function") {
+      try { window.__onCoastalGps(window.__coastalGps); } catch (e) {}
+    }
     if (!marker) {
       marker = L.marker(latlng, { icon: dotIcon, zIndexOffset: 2000 }).addTo(map);
       accuracy = L.circle(latlng, { radius: acc, color:'#3ec4d0', weight:1, fillColor:'#3ec4d0', fillOpacity:0.12, interactive:false }).addTo(map);
@@ -3823,9 +3827,11 @@ FOOD_POIS.forEach(p => {
    National average: FuelEconomy.gov (CORS-open, no key) — not a station price.
    Street prices are shown only when STATION_PRICE_API or localStorage
    coastalGasPriceApi returns real numbers. Nothing is invented.
-   The full drive is requested as overlapping tiles, not one FL→NC box.
-   ?gas=1 or #gas turns the layer on. A saved pack.here2serve.us/gas URL is ignored.
-   See README.md. */
+   Live prices are requested only near lodging stops, along today's drive
+   leg, and around the phone when geolocation is on. Cells are cached for
+   about 45 minutes. Turning the layer on again, or panning the map, does
+   not refetch a fresh cell. ?gas=1 or #gas turns the layer on. A saved
+   pack.here2serve.us/gas URL is ignored. See README.md. */
 (function setupGasLayer(){
   const chk = document.getElementById('chkGas');
   const note = document.getElementById('gasNote');
@@ -3859,6 +3865,9 @@ FOOD_POIS.forEach(p => {
   let controller = null;
   let usAvg = null;
   let latestPicked = [];
+  let lastBoxes = [];
+  let gpsKey = "";
+  let priceLoadActive = false;
 
   function esc(s) {
     return String(s == null ? "" : s).replace(/[&<>"']/g, c => ({
@@ -3908,17 +3917,20 @@ FOOD_POIS.forEach(p => {
   }
   function shortPriceLine(summary) {
     if (!summary || summary.skipped || summary.aborted) return "";
+    const n = summary.priced || 0;
+    if (summary.ok && n > 0) {
+      const mixed = !!(summary.partial || summary.usedCache);
+      let line = "Prices loaded (" + n + " " + (n === 1 ? "station" : "stations") + (mixed ? ", some areas cached" : "") + ")";
+      const reported = clockTime(summary.newest);
+      if (reported) line += " · reported " + reported;
+      return line + ".";
+    }
     if (!summary.ok) {
       if (summary.text && /No pump prices/i.test(summary.text)) return "No pump prices for this route.";
       if (!summary.text) return "";
       return "Gas prices did not load.";
     }
-    const when = clockTime(summary.loadedAt) || clockTime(summary.newest);
-    let line = when ? ("Gas prices as of " + when) : "Gas prices loaded";
-    if (summary.partial || (summary.text && /did not load|cell error/i.test(summary.text))) {
-      line += ", some stations missing";
-    }
-    return line + ".";
+    return "";
   }
   function setGasNote(short, details) {
     note.hidden = false;
@@ -4177,23 +4189,28 @@ FOOD_POIS.forEach(p => {
     return CoastalPriceFeed.normalizeWorkerStation(s);
   }
 
-  async function fetchPrices(signal) {
-    const base = priceApiUrl();
-    if (!base) return { stations: [], skipped: true };
-    // The 12h localStorage entry is OpenStreetMap locations only. Pump prices
-    // are not stored there, so every Gas-on and Refresh gas hits this feed.
-    return CoastalPriceFeed.fetchTiledPrices(driveLatLngs, {
-      base: base,
+  function priceFetchOpts(signal, bypass, onCached) {
+    const gps = (window.__coastalGps && Number.isFinite(+window.__coastalGps.lat) && Number.isFinite(+window.__coastalGps.lon))
+      ? window.__coastalGps : null;
+    return {
+      route: driveLatLngs,
+      home: home,
+      stops: stops,
+      gps: gps,
+      // Today's leg is chosen from stop dates in America/New_York.
+      // Lodging stops add one small box each. GPS adds a box only when
+      // the fix sits outside those cells. Map pans do not call this.
+      base: priceApiUrl(),
       signal: signal,
-      // The Worker answers small boxes, then GasBuddy cell-errors the rest if
-      // the whole route is fired at once. Two at a time, with a short gap.
-      // Route tiles already cover ~15 miles around each lodging stop. A stop
-      // that sits outside that pad gets one extra small tile, not a new grid.
       concurrency: 2,
       gap: 450,
-      stops: stops,
+      backoffBase: 800,
+      failureBudget: 3,
       stopRadiusMi: 15,
+      storage: window.localStorage,
+      bypassCache: !!bypass,
       normalize: normalizePriceStation,
+      onCached: onCached,
       fetcher: async function (url, sig) {
         const timeoutMs = 12000;
         const timed = new AbortController();
@@ -4227,7 +4244,13 @@ FOOD_POIS.forEach(p => {
           if (sig) sig.removeEventListener("abort", onAbort);
         }
       }
-    });
+    };
+  }
+
+  async function fetchPrices(signal, bypass, onCached) {
+    const base = priceApiUrl();
+    if (!base) return { stations: [], skipped: true };
+    return CoastalPriceFeed.fetchFocusedPrices(priceFetchOpts(signal, bypass, onCached));
   }
 
   function mergePrices(mapStations, prices) {
@@ -4512,28 +4535,53 @@ FOOD_POIS.forEach(p => {
     controller = new AbortController();
     const signal = controller.signal;
     const alive = () => token === loadToken && !signal.aborted;
+    priceLoadActive = true;
     let priceLoadedAt = null;
-    showGasStatus({ loading: "Loading fuel stops along the route…" });
     usAvg = null;
     const stationMap = new Map();
     const osmIds = new Set();
     let chunkErrors = 0;
 
+    try {
     const avgPromise = fetchUsAvg(signal).then(v => { usAvg = v; return v; }).catch(e => {
       if (e.name !== "AbortError") usAvg = null;
       return null;
     });
     let priceResult = null;
+    let showedCache = false;
     function paintPrices() {
       if (!alive() || !priceResult || priceResult.aborted) return;
       if (priceResult.stations && priceResult.stations.length) mergePrices(stationMap, priceResult.stations);
       draw(selectStations(Array.from(stationMap.values())));
     }
-    const pricePromise = fetchPrices(signal).then(v => v).catch(e => {
+    // Cached cells paint inside fetchPrices, before any network, and before
+    // the OpenStreetMap cache is read. Fresh cells are not requested again.
+    const pricePromise = fetchPrices(signal, bypass, function (info) {
+      if (!alive() || !info || !info.stations || !info.stations.length) return;
+      showedCache = true;
+      priceResult = {
+        stations: info.stations,
+        usedCache: true,
+        partial: !!(info.staleBoxes && info.staleBoxes.length),
+        tiles: info.boxes ? info.boxes.length : 0,
+        failedTiles: 0,
+        boxes: info.boxes || [],
+        requests: 0,
+        meta: { caches: [], sources: [], lastErrors: [], cellErrors: 0, stale: false }
+      };
+      if (info.boxes && info.boxes.length) lastBoxes = info.boxes;
+      if (!priceLoadedAt) priceLoadedAt = Date.now();
+      paintPrices();
+      showGasStatus({
+        summary: CoastalPriceFeed.priceUpdateSummary(priceResult, priceLoadedAt),
+        loading: info.staleBoxes && info.staleBoxes.length ? "Loading fuel stops along the route…" : ""
+      });
+    }).then(v => v).catch(e => {
       if (e.name === "AbortError") return { stations: [], aborted: true };
       return { stations: [], error: e.message || "Price feed failed" };
     }).then(v => {
       priceResult = v;
+      if (v && v.boxes && v.boxes.length) lastBoxes = v.boxes;
       if (!alive() || !v || v.aborted) return v;
       paintPrices();
       if (!priceLoadedAt) priceLoadedAt = Date.now();
@@ -4543,6 +4591,7 @@ FOOD_POIS.forEach(p => {
       });
       return v;
     });
+    if (!showedCache) showGasStatus({ loading: "Loading fuel stops along the route…" });
 
     const cached = bypass ? null : readCache();
     let fromPartial = false;
@@ -4602,13 +4651,38 @@ FOOD_POIS.forEach(p => {
     else if (fromPartial) extra = "Saved stations from the last load. Refresh gas retries missing stretches.";
     const summary = CoastalPriceFeed.priceUpdateSummary(priceResult, priceLoadedAt || Date.now());
     showGasStatus({ summary: summary, extra: extra, picked: picked });
+    if (priceResult && priceResult.boxes && priceResult.boxes.length) lastBoxes = priceResult.boxes;
     if (window.__gasDebug) {
       window.__gasDebug.priceNote = summary.text;
       window.__gasDebug.priceOk = summary.ok;
       window.__gasDebug.priceTiles = priceResult && priceResult.tiles || 0;
       window.__gasDebug.pricedFromFeed = priceResult && priceResult.stations ? priceResult.stations.length : 0;
+      window.__gasDebug.priceRequests = priceResult && priceResult.requests || 0;
+      window.__gasDebug.cellErrors = priceResult && priceResult.meta ? (priceResult.meta.cellErrors || 0) : 0;
+      window.__gasDebug.priceBoxes = priceResult && priceResult.boxes ? priceResult.boxes.length : 0;
+      window.__gasDebug.usedCache = !!(priceResult && priceResult.usedCache);
+      window.__gasDebug.shortPrice = shortPriceLine(summary);
+    }
+    } finally {
+      if (token === loadToken) priceLoadActive = false;
+    }
+    if (token === loadToken && chk.checked && window.__coastalGps) {
+      window.__onCoastalGps(window.__coastalGps);
     }
   }
+
+  // A later GPS fix adds one cell if it sits outside the cells already loaded.
+  // Watching the position, or panning the map, does not refetch those cells.
+  window.__onCoastalGps = function (gps) {
+    window.__coastalGps = gps;
+    if (!chk.checked || priceLoadActive || !lastBoxes.length || !gps) return;
+    const extra = CoastalPriceFeed.boxesForStops(lastBoxes, [gps], 15);
+    if (!extra.length) return;
+    const key = extra.map(b => b.map(n => Number(n).toFixed(4)).join(",")).join("|");
+    if (key === gpsKey) return;
+    gpsKey = key;
+    startLoad(false);
+  };
 
   chk.addEventListener("change", () => {
     setOn(chk.checked);
