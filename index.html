@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:ios-stops-20260929 -->
+<html lang="en"><!-- build:gas-picks-20260929 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -347,6 +347,9 @@
 .road-poi-icon{z-index:725 !important; background:transparent !important; border:none !important}
 .road-poi-icon div{position:relative;z-index:726;background-clip:padding-box}
 .leaflet-roadpins-pane{z-index:725 !important}
+.gaspick-poi-icon{z-index:732 !important; background:transparent !important; border:none !important}
+.gaspick-poi-icon div{position:relative;z-index:733;background-clip:padding-box}
+.leaflet-gaspickpins-pane{z-index:732 !important}
 .food-layers label.rest-toggle { flex-wrap:nowrap; white-space:nowrap; }
 .gas-refresh {
   display:inline-flex; align-items:center; justify-content:center;
@@ -1787,6 +1790,7 @@ html, body {
   <div class="food-layers" id="foodLayers" aria-label="Map layers">
     <label title="Along-the-way sights"><input type="checkbox" id="chkSights"> <span class="sw" style="background:#9b59d0"></span> Sights</label>
     <label class="road-toggle" title="Roadside stops on the drive from Anastasia to Edisto, on by default"><input type="checkbox" id="chkRoad" checked> <span class="sw" style="background:#a15c38"></span> Road stops</label>
+    <label class="gaspicks-toggle" title="Seven GasBuddy prices checked the morning of Sep 29, on by default"><input type="checkbox" id="chkGasPicks" checked> <span class="sw" style="background:#15803d"></span> Gas picks today (9/29)</label>
     <label title="Buc-ee's"><input type="checkbox" id="chkBucees"> <span class="sw" style="background:#d4af37"></span> Buc-ee's</label>
     <label title="Cook Out"><input type="checkbox" id="chkCookout"> <span class="sw" style="background:#e67e22"></span> Cook Out</label>
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
@@ -4822,6 +4826,108 @@ FOOD_POIS.forEach(p => {
         autoPanPaddingBottomRight: L.point(24, 120)
       })
       .bindTooltip(p.name, { direction: 'top', offset: [0, -8] })
+      .addTo(layer);
+  });
+  function setOn(on) {
+    const lab = chk.closest('label');
+    if (lab) lab.classList.toggle('on', !!on);
+  }
+  function apply() {
+    const on = !!chk.checked;
+    setOn(on);
+    if (on) { if (!map.hasLayer(layer)) map.addLayer(layer); }
+    else if (map.hasLayer(layer)) map.removeLayer(layer);
+  }
+  chk.addEventListener('change', apply);
+  apply();
+})();
+
+/* Gas picks for Sep 29. Static pins, on by default. Prices are GasBuddy reports, not the live feed. */
+(function setupGasPicks(){
+  const chk = document.getElementById('chkGasPicks');
+  if (!chk || typeof map === 'undefined' || typeof L === 'undefined') return;
+  const GAS_PICKS = [
+    {
+      name: "Murphy USA",
+      lat: 31.214705,
+      lon: -81.484981,
+      top: true,
+      note: "Top pick. 136 Altama Connector, Brunswick GA. $3.56 regular, reported 9:01 AM ET 9/29, source GasBuddy. Cheapest on the route, a few minutes off I-95."
+    },
+    {
+      name: "Sam's Club",
+      lat: 31.229921989834,
+      lon: -81.497118473053,
+      note: "10100 Canal Crossing, Brunswick GA. $3.87, reported 5:22 AM ET 9/29, source GasBuddy. Members only."
+    },
+    {
+      name: "Walmart Neighborhood Market",
+      lat: 31.193476734803,
+      lon: -81.486298441887,
+      note: "11 Glynn Plaza, Brunswick GA. $3.91, reported 6:07 AM ET 9/28, source GasBuddy."
+    },
+    {
+      name: "Murphy Express",
+      lat: 31.982049,
+      lon: -81.175621,
+      note: "14080 Abercorn St, Savannah GA. $3.54, reported 9:01 AM ET 9/29, source GasBuddy. About 15 min east of I-95."
+    },
+    {
+      name: "Parker's Kitchen",
+      lat: 31.990251253406,
+      lon: -81.22706826197,
+      note: "1750 Grove Point Rd, Savannah GA. $3.89, reported 7:47 AM ET 9/29, source GasBuddy."
+    },
+    {
+      name: "Circle K",
+      lat: 29.944744,
+      lon: -81.33716,
+      note: "4564 US-1 N, St. Augustine FL. $4.36, reported 6:59 AM ET 9/29, source GasBuddy."
+    },
+    {
+      name: "Exxon",
+      lat: 29.915975,
+      lon: -81.363164,
+      note: "967 FL-16, St. Augustine FL. $4.43, reported 7:10 AM ET 9/29, source GasBuddy. On SR-16 toward I-95."
+    }
+  ];
+  if (!map.getPane('gaspickpins')) {
+    map.createPane('gaspickpins');
+    map.getPane('gaspickpins').style.zIndex = '732';
+  }
+  const layer = L.layerGroup();
+  const PUMP = '<svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="#fff" d="M19.77 7.23l.01-.01-3.72-3.72L15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33 0 1.38 1.12 2.5 2.5 2.5.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14c0-1.1-.9-2-2-2h-1V5c0-1.1-.9-2-2-2H6c-1.1 0-2 .9-2 2v16h10v-7.5h1.5v5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V9c0-.69-.28-1.32-.73-1.77z"/></svg>';
+  function pumpIcon(color) {
+    return L.divIcon({
+      className: 'gaspick-poi-icon',
+      html: '<div style="width:22px;height:22px;border-radius:50%;background:' + color + ';border:2px solid #fff;box-shadow:0 1px 3px rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center">' + PUMP + '</div>',
+      iconSize: [22, 22],
+      iconAnchor: [11, 11]
+    });
+  }
+  function esc(s) {
+    return String(s == null ? '' : s).replace(/[&<>"']/g, c => ({
+      '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+    }[c]));
+  }
+  GAS_PICKS.forEach(p => {
+    const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(p.name) + '&ll=' + p.lat + ',' + p.lon;
+    const google = 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon;
+    const html = '<div class="popup"><h3><strong>' + esc(p.name) + '</strong></h3>' +
+      '<p>' + esc(p.note) + '</p>' +
+      '<p><a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a> · <a href="' + google + '" target="_blank" rel="noopener">Google Maps</a></p></div>';
+    L.marker([p.lat, p.lon], {
+      icon: pumpIcon(p.top ? '#15803d' : '#0f4c5c'),
+      pane: 'gaspickpins',
+      zIndexOffset: p.top ? 970 : 890,
+      riseOnHover: true
+    })
+      .bindPopup(html, {
+        maxWidth: 280,
+        autoPanPaddingTopLeft: L.point(24, 72),
+        autoPanPaddingBottomRight: L.point(24, 120)
+      })
+      .bindTooltip(p.top ? (p.name + ' — top pick') : p.name, { direction: 'top', offset: [0, -8] })
       .addTo(layer);
   });
   function setOn(on) {

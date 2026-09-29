@@ -412,7 +412,14 @@ assert.match(html, /31\.8908351/);
 assert.match(html, /-81\.1960562/);
 assert.match(html, /32\.5497723/);
 assert.match(html, /-80\.2745141/);
-assert.match(html, /build:ios-stops-20260929/);
+assert.match(html, /build:gas-picks-20260929/);
+assert.doesNotMatch(html, /build:ios-stops-20260929/);
+assert.match(html, /id="chkGasPicks" checked/);
+assert.match(html, /Gas picks today \(9\/29\)/);
+assert.match(html, /31\.214705/);
+assert.match(html, /-81\.484981/);
+assert.match(html, /29\.915975/);
+assert.match(html, /-81\.363164/);
 assert.match(html, /Gas prices as of /);
 assert.doesNotMatch(html, /build:road-stops-20260929/);
 
