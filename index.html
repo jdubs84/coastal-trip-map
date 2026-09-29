@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:gas-worker-20260924 -->
+<html lang="en"><!-- build:rest-off-20260929 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -1562,7 +1562,7 @@ html, body {
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
     <label title="Panera Bread"><input type="checkbox" id="chkPanera"> <span class="sw" style="background:#7cb342"></span> Panera</label>
     <label title="Restaurants"><input type="checkbox" id="chkRestaurants"> <span class="sw" style="background:#16a085"></span> Restaurants</label>
-    <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" checked> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
+    <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" autocomplete="off"> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
     <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
     <p class="gas-note" id="gasNote" hidden></p>
@@ -4327,7 +4327,7 @@ FOOD_POIS.forEach(p => {
 })();
 
 /* Rest areas baked in rest-areas.js (OpenStreetMap, not a live Overpass call).
-   On by default. Popups use the same Apple / Google https links as the other layers
+   Off by default. Popups use the same Apple / Google https links as the other layers
    so the iOS capture-phase handler can rewrite them. */
 (function setupRestAreas(){
   const chk = document.getElementById('chkRest');
