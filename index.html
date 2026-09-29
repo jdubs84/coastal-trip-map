@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:road-stops-20260929 -->
+<html lang="en"><!-- build:ios-stops-20260929 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -1538,6 +1538,227 @@ html, body {
 .leaflet-popup-pane { z-index:800; }
 .btn-hub, #btnHub { pointer-events:auto !important; }
 </style>
+<style id="iphone-stops">
+/* Gas status: one short line. Counts, reports, and source sit behind Details. */
+.gas-note {
+  font-size:14px;
+  line-height:1.35;
+}
+.gas-note-line {
+  display:flex;
+  align-items:center;
+  gap:8px;
+  width:100%;
+}
+.gas-note-short {
+  flex:1 1 auto;
+  min-width:0;
+  font-size:14px;
+  line-height:1.35;
+  color:var(--muted);
+}
+.gas-details-toggle {
+  flex:none;
+  min-height:44px;
+  min-width:44px;
+  padding:8px 14px;
+  border-radius:12px;
+  border:1px solid var(--line);
+  background:rgba(255,255,255,.06);
+  color:var(--ink);
+  font:inherit;
+  font-size:14px;
+  font-weight:700;
+  cursor:pointer;
+  touch-action:manipulation;
+}
+.gas-details-toggle[hidden] { display:none !important; }
+.gas-note-details {
+  display:block;
+  margin-top:6px;
+  font-size:14px;
+  line-height:1.4;
+  color:var(--muted);
+  overflow-wrap:anywhere;
+}
+.gas-note-details[hidden] { display:none !important; }
+.layers-toggle {
+  display:none;
+  align-items:center;
+  justify-content:center;
+  width:calc(100% - 24px);
+  margin:0 12px 8px;
+  min-height:48px;
+  padding:12px 16px;
+  border-radius:14px;
+  border:1px solid rgba(62,196,208,.5);
+  background:rgba(62,196,208,.18);
+  color:#e8f7fa;
+  font:inherit;
+  font-size:16px;
+  font-weight:700;
+  cursor:pointer;
+  touch-action:manipulation;
+  -webkit-tap-highlight-color:transparent;
+}
+@media (max-width:600px) {
+  .layers-toggle { display:flex; position:sticky; top:48px; z-index:3; }
+  html.controls-collapsed {
+    --sheet-h: calc(112px + env(safe-area-inset-bottom, 0px));
+  }
+  html.controls-collapsed aside#tripSheet,
+  html.controls-collapsed aside {
+    height:auto !important;
+    max-height:32dvh !important;
+    overflow:hidden !important;
+    padding-bottom:env(safe-area-inset-bottom, 0px) !important;
+  }
+  html.controls-collapsed aside .kicker,
+  html.controls-collapsed aside h1,
+  html.controls-collapsed aside .lede,
+  html.controls-collapsed aside .meta,
+  html.controls-collapsed aside .toolbar,
+  html.controls-collapsed aside .timeline,
+  html.controls-collapsed aside .poi-section,
+  html.controls-collapsed aside .food-layers,
+  html.controls-collapsed aside .foot {
+    display:none !important;
+  }
+  aside.layers-open .kicker,
+  aside.layers-open h1 { display:none !important; }
+  .food-layers { gap:8px; }
+  .food-layers label,
+  .gas-refresh,
+  .toolbar button,
+  .food-layers .signal-carriers label {
+    min-height:44px;
+    font-size:15px;
+    padding:10px 14px;
+    touch-action:manipulation;
+  }
+  .food-layers label {
+    flex:1 1 calc(50% - 8px);
+    justify-content:flex-start;
+  }
+  .food-layers label input,
+  .food-layers .signal-carriers label input {
+    width:22px;
+    height:22px;
+    margin:0;
+    flex:none;
+  }
+  .gas-refresh { flex:1 1 calc(50% - 8px); font-size:15px; }
+  .sheet-handle { min-height:44px; }
+  .sheet-handle .hint { font-size:14px; letter-spacing:0; text-transform:none; }
+  aside, .kicker, .lede, .meta .label, .meta .value, .drive, .dates, .place, .chip,
+  .poi-text strong, .poi-text em, .signal-legend, .signal-starlink {
+    font-size:14px;
+  }
+  h1 { font-size:1.7rem; }
+  .stop h2 { font-size:1.05rem; }
+  .leaflet-control-attribution { font-size:14px !important; }
+  .tminus-one, .tminus-sub, .tminus-kicker, .tminus-unit, .brand, .brand strong, .brand span {
+    font-size:14px;
+  }
+  .btn-hub, #btnHub {
+    top:calc(10px + env(safe-area-inset-top, 0px));
+    left:calc(56px + env(safe-area-inset-left, 0px));
+    min-height:44px;
+    font-size:16px;
+  }
+  .leaflet-top.leaflet-left {
+    top:calc(8px + env(safe-area-inset-top, 0px)) !important;
+    left:calc(8px + env(safe-area-inset-left, 0px)) !important;
+  }
+  .leaflet-top.leaflet-right {
+    top:calc(8px + env(safe-area-inset-top, 0px)) !important;
+    right:calc(8px + env(safe-area-inset-right, 0px)) !important;
+  }
+  .leaflet-bottom.leaflet-left,
+  .leaflet-bottom.leaflet-right {
+    margin-bottom:env(safe-area-inset-bottom, 0px) !important;
+  }
+  .leaflet-popup {
+    max-width:90vw !important;
+  }
+  .leaflet-container .leaflet-popup-content-wrapper {
+    max-width:90vw !important;
+  }
+  .leaflet-container .leaflet-popup-content,
+  .leaflet-popup-content {
+    width:auto !important;
+    max-width:90vw !important;
+    max-height:min(52vh, 460px) !important;
+    overflow-y:auto !important;
+    -webkit-overflow-scrolling:touch;
+    margin:12px 14px 14px !important;
+    padding-right:28px;
+    font-size:14px !important;
+    line-height:1.4 !important;
+  }
+  .leaflet-popup-content h3,
+  .leaflet-popup-content .popup h3,
+  .popup h3 {
+    font-size:1.15rem !important;
+  }
+  .leaflet-popup-content p,
+  .popup p {
+    font-size:14px !important;
+    line-height:1.4 !important;
+    margin:8px 0 !important;
+  }
+  .popup p:has(a[href*="maps.apple.com"]),
+  .popup p:has(a[href*="google.com/maps"]) {
+    display:flex;
+    flex-direction:column;
+    gap:8px;
+    font-size:0 !important;
+    margin-top:10px !important;
+  }
+  .popup p:has(a[href*="maps.apple.com"]) a,
+  .popup p:has(a[href*="google.com/maps"]) a {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    min-height:44px;
+    padding:10px 14px;
+    border-radius:12px;
+    font-size:16px !important;
+    font-weight:700;
+    text-decoration:none;
+    text-align:center;
+  }
+  .popup a[href*="maps.apple.com"] {
+    background:#1a9aa6;
+    color:#041418 !important;
+  }
+  .popup a[href*="google.com/maps"],
+  .popup a[href*="maps.google.com"] {
+    background:#f3f7fa;
+    color:#102028 !important;
+  }
+  .popup a[href*="gasbuddy.com"] {
+    background:transparent;
+    color:#9be7ee !important;
+    border:1px solid rgba(155,231,238,.45);
+  }
+  .leaflet-container a.leaflet-popup-close-button {
+    width:44px !important;
+    height:44px !important;
+    font-size:22px !important;
+    line-height:44px !important;
+  }
+}
+</style>
+<script>
+(function () {
+  try {
+    if (window.matchMedia("(max-width: 600px)").matches) {
+      document.documentElement.classList.add("controls-collapsed");
+    }
+  } catch (e) {}
+})();
+</script>
 </head>
 <body>
 <aside id="tripSheet">
@@ -1558,9 +1779,10 @@ html, body {
     <button type="button" id="btnStreet">Street</button>
     <button type="button" id="btnClean">Light map</button>
   </div>
+  <button type="button" id="btnLayers" class="layers-toggle" aria-expanded="false" aria-controls="foodLayers">Layers</button>
   <div class="food-layers" id="foodLayers" aria-label="Map layers">
     <label title="Along-the-way sights"><input type="checkbox" id="chkSights"> <span class="sw" style="background:#9b59d0"></span> Sights</label>
-    <label class="road-toggle" title="Old Sheldon Church Ruins, Hofwyl-Broadfield Plantation, and Fort King George, on the drive from Anastasia to Edisto"><input type="checkbox" id="chkRoad" checked> <span class="sw" style="background:#a15c38"></span> Road stops</label>
+    <label class="road-toggle" title="Roadside stops on the drive from Anastasia to Edisto, on by default"><input type="checkbox" id="chkRoad" checked> <span class="sw" style="background:#a15c38"></span> Road stops</label>
     <label title="Buc-ee's"><input type="checkbox" id="chkBucees"> <span class="sw" style="background:#d4af37"></span> Buc-ee's</label>
     <label title="Cook Out"><input type="checkbox" id="chkCookout"> <span class="sw" style="background:#e67e22"></span> Cook Out</label>
     <label title="Wawa"><input type="checkbox" id="chkWawa"> <span class="sw" style="background:#c0392b"></span> Wawa</label>
@@ -1569,7 +1791,7 @@ html, body {
     <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" autocomplete="off"> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
     <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
-    <p class="gas-note" id="gasNote" hidden></p>
+    <p class="gas-note" id="gasNote" hidden><span class="gas-note-line"><span class="gas-note-short"></span><button type="button" class="gas-details-toggle" hidden aria-expanded="false" aria-controls="gasNoteDetails">Details</button></span><span class="gas-note-details" id="gasNoteDetails" hidden></span></p>
     <label class="signal-toggle" title="Cell dead zones along the route, from FCC coverage data"><input type="checkbox" id="chkSignal"> <span class="sw" style="background:#d9534f"></span> Signal gaps</label>
     <div class="signal-panel" id="signalPanel" hidden>
       <div class="signal-carriers" role="radiogroup" aria-label="Carrier">
@@ -2137,6 +2359,20 @@ const map = L.map('map', {
     }, 1500);
   }, true);
 })();
+// Phone popups: fit the screen and scroll inside when the note is long.
+map.on('popupopen', function (e) {
+  var popup = e.popup;
+  if (!popup || popup._iosFitting || window.innerWidth > 600) return;
+  popup._iosFitting = true;
+  var max = Math.max(240, Math.round(window.innerWidth * 0.9));
+  popup.options.maxWidth = max;
+  popup.options.minWidth = Math.min(260, max);
+  popup.options.maxHeight = Math.max(160, Math.round(window.innerHeight * 0.5));
+  popup.options.autoPanPaddingTopLeft = L.point(8, 88);
+  popup.options.autoPanPaddingBottomRight = L.point(8, 130);
+  popup.update();
+  popup._iosFitting = false;
+});
 // Back to Hub is a plain overlay beside the map, not inside a Leaflet pane.
 (function pinHubLink() {
   var link = document.getElementById('btnHub');
@@ -2421,20 +2657,40 @@ map.fitBounds(driveLine.getBounds(), { padding:[50,50] });
 })();
 
 
-/* Mobile bottom sheet: slide info down to free map */
+/* Mobile bottom sheet: slide info down to free map.
+   At 600px and under, layer controls start collapsed behind a Layers button. */
 (function setupTripSheet(){
   const aside = document.getElementById('tripSheet');
   const handle = document.getElementById('sheetHandle');
   const hint = document.getElementById('sheetHint');
+  const layersBtn = document.getElementById('btnLayers');
   if (!aside || !handle) return;
   const mq = window.matchMedia('(max-width:900px)');
+  const narrow = window.matchMedia('(max-width:600px)');
   const levels = () => {
     const vh = window.innerHeight || 700;
-    return { peek: Math.round(vh * 0.18), mid: Math.round(vh * 0.48), full: Math.round(vh * 0.88) };
+    return {
+      peek: narrow.matches ? 112 : Math.round(vh * 0.18),
+      mid: Math.round(vh * 0.48),
+      full: Math.round(vh * 0.88),
+      layers: Math.round(Math.min(vh * 0.58, 520))
+    };
   };
   let mode = (window.matchMedia('(max-width:900px), (hover:none) and (pointer:coarse)').matches) ? 'peek' : 'mid'; // phone: peek so map paints
+  if (narrow.matches) mode = 'peek';
   let startY = 0, startH = 0, dragging = false, moved = false;
 
+  function syncLayersButton() {
+    if (!layersBtn) return;
+    const collapsed = document.documentElement.classList.contains('controls-collapsed');
+    layersBtn.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+    layersBtn.textContent = collapsed ? 'Layers' : 'Hide layers';
+  }
+  function measureCollapsed() {
+    if (!narrow.matches || !document.documentElement.classList.contains('controls-collapsed')) return;
+    const h = Math.round(aside.getBoundingClientRect().height);
+    if (h > 40) document.documentElement.style.setProperty('--sheet-h', h + 'px');
+  }
   function apply(h, snap){
     const L = levels();
     let height = h;
@@ -2445,23 +2701,34 @@ map.fitBounds(driveLine.getBounds(), { padding:[50,50] });
       else if (height === L.full) mode = 'full';
       else mode = 'mid';
     }
-    document.documentElement.style.setProperty('--sheet-h', height + 'px');
-    aside.classList.toggle('sheet-collapsed', mode === 'peek');
+    let collapseControls = narrow.matches && mode === 'peek';
+    if (!snap && narrow.matches && height > L.peek + 30) collapseControls = false;
+    document.documentElement.classList.toggle('controls-collapsed', collapseControls);
+    aside.classList.toggle('sheet-collapsed', mode === 'peek' || mode === 'layers');
+    aside.classList.toggle('layers-open', mode === 'layers');
+    if (!collapseControls) document.documentElement.style.setProperty('--sheet-h', height + 'px');
+    syncLayersButton();
     if (hint) {
       hint.textContent = mode === 'peek' ? 'Swipe up for stops' : (mode === 'full' ? 'Swipe down for map' : 'Swipe down for more map');
     }
-    try { map.invalidateSize({ animate:false }); } catch(e){}
+    requestAnimationFrame(() => {
+      measureCollapsed();
+      try { map.invalidateSize({ animate:false }); } catch(e){}
+    });
   }
   window.__setSheetHeight = (h) => apply(h, true);
 
   function syncDesktop(){
     if (!mq.matches) {
       document.documentElement.style.removeProperty('--sheet-h');
-      aside.classList.remove('sheet-collapsed','sheet-dragging');
+      document.documentElement.classList.remove('controls-collapsed');
+      aside.classList.remove('sheet-collapsed','sheet-dragging','layers-open');
+      syncLayersButton();
       return;
     }
     const L = levels();
-    apply(mode === 'peek' ? L.peek : (mode === 'full' ? L.full : L.mid), false);
+    const h = mode === 'peek' ? L.peek : (mode === 'full' ? L.full : (mode === 'layers' ? L.layers : L.mid));
+    apply(h, false);
   }
 
   function onStart(clientY){
@@ -2509,7 +2776,16 @@ map.fitBounds(driveLine.getBounds(), { padding:[50,50] });
     if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); handle.click(); }
   });
 
+  if (layersBtn) {
+    layersBtn.addEventListener('click', () => {
+      if (!narrow.matches) return;
+      mode = document.documentElement.classList.contains('controls-collapsed') ? 'layers' : 'peek';
+      syncDesktop();
+    });
+  }
+
   mq.addEventListener('change', syncDesktop);
+  narrow.addEventListener('change', syncDesktop);
   window.addEventListener('resize', () => { if (mq.matches) syncDesktop(); });
   syncDesktop();
 })();
@@ -3597,9 +3873,92 @@ FOOD_POIS.forEach(p => {
     } catch (e) {}
     return CoastalPriceFeed.resolveStationPriceApi(saved, STATION_PRICE_API);
   }
-  function gasOffNote() {
+  const gasShort = note.querySelector(".gas-note-short");
+  const gasDetails = note.querySelector(".gas-note-details");
+  const gasDetailsBtn = note.querySelector(".gas-details-toggle");
+  if (gasDetailsBtn && gasDetails) {
+    gasDetailsBtn.addEventListener("click", () => {
+      const open = gasDetails.hidden;
+      gasDetails.hidden = !open;
+      gasDetailsBtn.setAttribute("aria-expanded", open ? "true" : "false");
+      gasDetailsBtn.textContent = open ? "Hide" : "Details";
+    });
+  }
+  function clockTime(v) {
+    if (!v) return "";
+    const d = new Date(v);
+    if (Number.isNaN(d.getTime())) return "";
+    return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+  function shortPriceLine(summary) {
+    if (!summary || summary.skipped || summary.aborted) return "";
+    if (!summary.ok) {
+      if (summary.text && /No pump prices/i.test(summary.text)) return "No pump prices for this route.";
+      if (!summary.text) return "";
+      return "Gas prices did not load.";
+    }
+    const when = clockTime(summary.loadedAt) || clockTime(summary.newest);
+    let line = when ? ("Gas prices as of " + when) : "Gas prices loaded";
+    if (summary.partial || (summary.text && /did not load|cell error/i.test(summary.text))) {
+      line += ", some stations missing";
+    }
+    return line + ".";
+  }
+  function setGasNote(short, details) {
     note.hidden = false;
-    note.textContent = "Gas is off. Turn Gas on to load street prices.";
+    short = String(short || "").replace(/\s*\d+\s+cell errors?\b/gi, "").replace(/\s{2,}/g, " ").trim();
+    if (!gasShort || !gasDetails || !gasDetailsBtn) {
+      note.textContent = short;
+      return;
+    }
+    gasShort.textContent = short;
+    const text = details && String(details).trim();
+    const useful = !!(text && text !== short);
+    gasDetails.textContent = useful ? text : "";
+    gasDetailsBtn.hidden = !useful;
+    if (!useful) {
+      gasDetails.hidden = true;
+      gasDetailsBtn.setAttribute("aria-expanded", "false");
+      gasDetailsBtn.textContent = "Details";
+    }
+  }
+  function detailLine(summary, extra, loading, picked) {
+    const bits = [];
+    const status = summary ? priceNote(summary) : "";
+    if (status) bits.push(status);
+    if (extra) bits.push(extra);
+    if (loading) bits.push(loading);
+    if (picked) {
+      bits.push(picked.length + (picked.length === 1 ? " station" : " stations") + " along the route");
+      const regulars = picked.filter(s => s.displayGrade === "regular");
+      if (regulars.length) {
+        const low = Math.min.apply(null, regulars.map(s => s.regular));
+        bits.push("lowest regular " + money(low));
+      } else if (summary && !summary.ok && !summary.text) {
+        bits.push("street prices are not in a free browser feed — open a pin for GasBuddy");
+      }
+      if (usAvg && Number.isFinite(usAvg.regular)) {
+        let avg = "US avg regular " + moneyAvg(usAvg.regular);
+        if (Number.isFinite(usAvg.midgrade)) avg += " · mid " + moneyAvg(usAvg.midgrade);
+        avg += " (FuelEconomy.gov, not a station price)";
+        bits.push(avg);
+      }
+      bits.push("stations © OpenStreetMap");
+    } else if (usAvg && Number.isFinite(usAvg.regular)) {
+      bits.push("US avg regular " + moneyAvg(usAvg.regular) + " (FuelEconomy.gov, not a station price)");
+    }
+    return bits.join(" · ");
+  }
+  function showGasStatus(opts) {
+    opts = opts || {};
+    const summary = opts.summary || null;
+    const loading = opts.loading || "";
+    let short = shortPriceLine(summary);
+    if (!short) short = loading || "Loading fuel stops…";
+    setGasNote(short, detailLine(summary, opts.extra || "", loading, opts.picked || null));
+  }
+  function gasOffNote() {
+    setGasNote("Gas is off. Turn Gas on to load street prices.", "");
   }
   function gasDeepLinkOn() {
     try {
@@ -4131,38 +4490,14 @@ FOOD_POIS.forEach(p => {
     });
   }
 
-  function finalNote(picked, extra, priceResult) {
-    const summary = CoastalPriceFeed.priceUpdateSummary(priceResult, Date.now());
-    const bits = [];
-    const status = priceNote(summary);
-    if (status) bits.push(status);
-    if (extra) bits.push(extra);
-    bits.push(picked.length + (picked.length === 1 ? " station" : " stations") + " along the route");
-    const regulars = picked.filter(s => s.displayGrade === "regular");
-    if (regulars.length) {
-      const low = Math.min.apply(null, regulars.map(s => s.regular));
-      bits.push("lowest regular " + money(low));
-    } else if (!summary.ok && !summary.text) {
-      bits.push("street prices are not in a free browser feed — open a pin for GasBuddy");
-    }
-    if (usAvg && Number.isFinite(usAvg.regular)) {
-      let avg = "US avg regular " + moneyAvg(usAvg.regular);
-      if (Number.isFinite(usAvg.midgrade)) avg += " · mid " + moneyAvg(usAvg.midgrade);
-      avg += " (FuelEconomy.gov, not a station price)";
-      bits.push(avg);
-    }
-    bits.push("stations © OpenStreetMap");
-    return bits.join(" · ");
-  }
-
   async function startLoad(bypass) {
     const token = ++loadToken;
     if (controller) controller.abort();
     controller = new AbortController();
     const signal = controller.signal;
     const alive = () => token === loadToken && !signal.aborted;
-    note.hidden = false;
-    note.textContent = "Loading fuel stops along the route…";
+    let priceLoadedAt = null;
+    showGasStatus({ loading: "Loading fuel stops along the route…" });
     usAvg = null;
     const stationMap = new Map();
     const osmIds = new Set();
@@ -4185,8 +4520,11 @@ FOOD_POIS.forEach(p => {
       priceResult = v;
       if (!alive() || !v || v.aborted) return v;
       paintPrices();
-      const status = priceNote(CoastalPriceFeed.priceUpdateSummary(v, Date.now()));
-      if (status) note.textContent = status;
+      if (!priceLoadedAt) priceLoadedAt = Date.now();
+      showGasStatus({
+        summary: CoastalPriceFeed.priceUpdateSummary(v, priceLoadedAt),
+        loading: "Loading fuel stops along the route…"
+      });
       return v;
     });
 
@@ -4218,13 +4556,11 @@ FOOD_POIS.forEach(p => {
           osmIds.add(k);
         });
         if (priceResult && priceResult.stations && priceResult.stations.length) mergePrices(stationMap, priceResult.stations);
-        let progress = "Loading fuel stops along the route (" + (i + 1) + " of " + chunks.length + ")…";
-        if (priceResult) {
-          const status = priceNote(CoastalPriceFeed.priceUpdateSummary(priceResult, Date.now()));
-          if (status) progress = status + " · " + progress;
-        }
-        if (usAvg && Number.isFinite(usAvg.regular)) progress += " US avg regular " + moneyAvg(usAvg.regular) + ".";
-        note.textContent = progress;
+        const progress = "Loading fuel stops (" + (i + 1) + " of " + chunks.length + ")…";
+        showGasStatus({
+          summary: priceResult ? CoastalPriceFeed.priceUpdateSummary(priceResult, priceLoadedAt || Date.now()) : null,
+          loading: progress
+        });
         draw(selectStations(Array.from(stationMap.values())));
         if (i < chunks.length - 1) await new Promise(r => setTimeout(r, 700));
       }
@@ -4248,8 +4584,8 @@ FOOD_POIS.forEach(p => {
     if (!stationMap.size) extra = "Could not load stations. Try Refresh gas.";
     else if (chunkErrors) extra = "Some stretches did not load.";
     else if (fromPartial) extra = "Saved stations from the last load. Refresh gas retries missing stretches.";
-    const summary = CoastalPriceFeed.priceUpdateSummary(priceResult, Date.now());
-    note.textContent = finalNote(picked, extra, priceResult);
+    const summary = CoastalPriceFeed.priceUpdateSummary(priceResult, priceLoadedAt || Date.now());
+    showGasStatus({ summary: summary, extra: extra, picked: picked });
     if (window.__gasDebug) {
       window.__gasDebug.priceNote = summary.text;
       window.__gasDebug.priceOk = summary.ok;
@@ -4374,21 +4710,33 @@ FOOD_POIS.forEach(p => {
   window.__signalLayer = { show, get carrier(){ return carrier; }, url: SIGNAL_URL };
 })();
 
-/* Road stops on the Tue 9/29 Anastasia → Edisto leg. On by default.
-   Coordinates are OpenStreetMap centroids from Nominatim, on the site itself:
-   Old Sheldon Church Ruins, way 1034586270 (historic=ruins), 32.6185351, -80.7804583.
-   Hofwyl-Broadfield Plantation, way 1088776489 (building, tourism=museum), 31.3048702, -81.4564336.
+/* Road stops on the Anastasia → Edisto drive. On by default.
+   Coordinates checked against OpenStreetMap (not guessed):
+   Marshes of Glynn Overlook — Nominatim/GNIS node 358710062 is 31.1524529, -81.4781555,
+     on Glynn Avenue just outside the park. Pin is the shoelace centroid of leisure=park
+     way 1099469224 (memorial, footways, pier), which contains that point's park: 31.1529545, -81.4779052.
+   Hofwyl-Broadfield Plantation, way 1088776489 (tourism=museum), 31.3048702, -81.4564336.
    Fort King George Historic Site, way 1099757333 (historic=archaeological_site), 31.3638645, -81.4146948.
+   Darien Waterfront — no named waterfront object. Pin is the landward node of pier way 1107124513
+     in the shrimp-dock cluster, 31.3681553, -81.4372724, about 32 m from Skippers' Fish Camp node 1361659893.
+   Midway Museum, way 1042741384 (tourism=museum, 491 N Ocean Hwy), Nominatim 31.8067690, -81.4300235.
+     Midway Congregational Church way 1042741387 is about 90 m south; Midway Cemetery way 1042741388 is just west.
+   Fort McAllister — historic=fort node 153923179, 31.8908351, -81.1960562, inside state-park way 460252687.
+     The park polygon centroid is about 0.53 mi away, so the pin is the earthwork, not the centroid.
+   Old Sheldon Church Ruins, way 1034586270 (historic=ruins), 32.6185351, -80.7804583.
+   Botany Bay — Census and Nominatim have no point for 1066 Botany Bay Rd. Pin is swing-gate node 9180230584
+     at 32.5497723, -80.2745141, on the boundary of Botany Bay Heritage Preserve relation 13673817 where
+     Botany Bay Road (way 12147323) enters. Parking-space node 11751795267 is beside the gate.
    Popups use the same Apple / Google https links as the other layers. */
 (function setupRoadStops(){
   const chk = document.getElementById('chkRoad');
   if (!chk || typeof map === 'undefined' || typeof L === 'undefined') return;
   const ROAD_STOPS = [
     {
-      name: "Old Sheldon Church Ruins",
-      lat: 32.6185351,
-      lon: -80.7804583,
-      note: "Free ruins (1750s church), sunrise to sunset, no restrooms. Off I-95 exit 33 via US-17."
+      name: "Marshes of Glynn Overlook",
+      lat: 31.1529545,
+      lon: -81.4779052,
+      note: "Marsh boardwalk; historic Newcastle St downtown is nearby. I-95 exit 36B, about 10 min off."
     },
     {
       name: "Hofwyl-Broadfield Plantation State Historic Site",
@@ -4401,6 +4749,36 @@ FOOD_POIS.forEach(p => {
       lat: 31.3638645,
       lon: -81.4146948,
       note: "Rebuilt 1721 British fort, ~$8, open Tue 9-5. About 3 mi off I-95 exit 49."
+    },
+    {
+      name: "Darien Waterfront",
+      lat: 31.3681553,
+      lon: -81.4372724,
+      note: "Riverfront boardwalk and shrimp boats, next to Fort King George. Skipper's Fish Camp is the local seafood lunch spot. I-95 exit 49."
+    },
+    {
+      name: "Midway Museum and Midway Congregational Church",
+      lat: 31.8067690,
+      lon: -81.4300235,
+      note: "Colonial raised-cottage museum, historic church, and cemetery. Just off US-17 near I-95."
+    },
+    {
+      name: "Fort McAllister State Park",
+      lat: 31.8908351,
+      lon: -81.1960562,
+      note: "Best-preserved Civil War earthwork fort in Georgia. About a 10 mi detour each way, so only if running early. Near I-95 exit 90."
+    },
+    {
+      name: "Old Sheldon Church Ruins",
+      lat: 32.6185351,
+      lon: -80.7804583,
+      note: "Free ruins (1750s church), sunrise to sunset, no restrooms. Off I-95 exit 33 via US-17."
+    },
+    {
+      name: "Botany Bay Plantation",
+      lat: 32.5497723,
+      lon: -80.2745141,
+      note: "CLOSED TUESDAYS and on scheduled hunt days. Open half an hour before sunrise to half an hour after sunset. Fill out the free day-use pass at the gate kiosk. Boneyard beach, oak avenue, ruins. No shell collecting, no dogs on the beach. Best on Wed 9/30 from the Edisto cabin. Entrance at 1066 Botany Bay Rd off SC-174."
     }
   ];
   if (!map.getPane('roadpins')) {
