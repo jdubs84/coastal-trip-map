@@ -402,5 +402,18 @@ assert.match(html, /31\.3048702/);
 assert.match(html, /-81\.4564336/);
 assert.match(html, /31\.3638645/);
 assert.match(html, /-81\.4146948/);
+assert.match(html, /31\.1529545/);
+assert.match(html, /-81\.4779052/);
+assert.match(html, /31\.3681553/);
+assert.match(html, /-81\.4372724/);
+assert.match(html, /31\.8067690/);
+assert.match(html, /-81\.4300235/);
+assert.match(html, /31\.8908351/);
+assert.match(html, /-81\.1960562/);
+assert.match(html, /32\.5497723/);
+assert.match(html, /-80\.2745141/);
+assert.match(html, /build:ios-stops-20260929/);
+assert.match(html, /Gas prices as of /);
+assert.doesNotMatch(html, /build:road-stops-20260929/);
 
 console.log("gas price tile tests passed (" + tiles.length + " route tiles, " + calls.length + " simulated requests, max in flight " + maxInflight + ")");
