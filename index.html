@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:layers-scroll-20260929 -->
+<html lang="en"><!-- build:gas-picks-20261001 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -2044,7 +2044,7 @@ html, body {
     </div>
     <div class="layer-sheet-list" id="layerSheetList">
     <h2 class="layer-group">Gas</h2>
-    <label class="gaspicks-toggle" title="Seven GasBuddy prices checked the morning of Sep 29, on by default"><input type="checkbox" id="chkGasPicks" checked> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.77 7.23 16.06 3.5 15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33a2.5 2.5 0 0 0 2.5 2.5c.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14a2 2 0 0 0-2-2h-1V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16h10v-7.5h1.5v5A2.5 2.5 0 0 0 18 21a2.5 2.5 0 0 0 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5z"/></svg></span> <span class="sw" style="background:#15803d"></span> Gas picks today (9/29)</label>
+    <label class="gaspicks-toggle" title="GasBuddy prices for Sep 29 and Thu Oct 1, on by default"><input type="checkbox" id="chkGasPicks" checked> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.77 7.23 16.06 3.5 15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33a2.5 2.5 0 0 0 2.5 2.5c.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14a2 2 0 0 0-2-2h-1V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16h10v-7.5h1.5v5A2.5 2.5 0 0 0 18 21a2.5 2.5 0 0 0 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5z"/></svg></span> <span class="sw" style="background:#15803d"></span> Gas picks (9/29, 10/1)</label>
     <label class="gas-toggle" title="Fuel stations along the driving route. Pump prices load from the feed when this is on."><input type="checkbox" id="chkGas"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M19.77 7.23 16.06 3.5 15 4.56l2.11 2.11c-.94.36-1.61 1.26-1.61 2.33a2.5 2.5 0 0 0 2.5 2.5c.36 0 .69-.08 1-.21v7.21c0 .55-.45 1-1 1s-1-.45-1-1V14a2 2 0 0 0-2-2h-1V5a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16h10v-7.5h1.5v5A2.5 2.5 0 0 0 18 21a2.5 2.5 0 0 0 2.5-2.5V9c0-.69-.28-1.32-.73-1.77zM12 10H6V5h6v5z"/></svg></span> <span class="sw" style="background:#f5c542"></span> Gas</label>
     <button type="button" id="btnGasRefresh" class="gas-refresh">Refresh gas</button>
     <p class="gas-note" id="gasNote" hidden><span class="gas-note-line"><span class="gas-note-short"></span><button type="button" class="gas-details-toggle" hidden aria-expanded="false" aria-controls="gasNoteDetails">Details</button></span><span class="gas-note-details" id="gasNoteDetails" hidden></span></p>
@@ -5377,7 +5377,12 @@ FOOD_POIS.forEach(p => {
   apply();
 })();
 
-/* Gas picks for Sep 29. Static pins, on by default. Prices are GasBuddy reports, not the live feed. */
+/* Gas picks. Static pins, on by default. Prices are GasBuddy reports, not the live feed.
+   Oct 1 pins geocoded 2026-09-30 with Nominatim (User-Agent coastal-trip-map/1.0):
+   904 St Andrews Blvd, Charleston SC 29407 → 32.7922991, -79.9888917
+     (house-number interpolation on Saint Andrews Boulevard, OSM way 1387133620; Census range 900–938, right side).
+   Circle K, 685 Johnnie Dodds Blvd, Mount Pleasant SC 29464 → 32.8076579, -79.8786184
+     (Circle K building, OSM way 1494474567). */
 (function setupGasPicks(){
   const chk = document.getElementById('chkGasPicks');
   if (!chk || typeof map === 'undefined' || typeof L === 'undefined') return;
@@ -5424,6 +5429,19 @@ FOOD_POIS.forEach(p => {
       lat: 29.915975,
       lon: -81.363164,
       note: "967 FL-16, St. Augustine FL. $4.43, reported 7:10 AM ET 9/29, source GasBuddy. On SR-16 toward I-95."
+    },
+    {
+      name: "Circle K",
+      lat: 32.7922991,
+      lon: -79.9888917,
+      top: true,
+      note: "904 St Andrews Blvd, Charleston, SC 29407 (West Ashley). Gas pick Thu 10/1 (Edisto→Georgetown): regular $3.85 per GasBuddy Wed 9/30 evening; ~mile 44, ~0.7 mi off US-17."
+    },
+    {
+      name: "Circle K",
+      lat: 32.8076579,
+      lon: -79.8786184,
+      note: "685 Johnnie Dodds Blvd, Mount Pleasant, SC 29464. Backup gas Thu 10/1: $3.94 per GasBuddy 9/30."
     }
   ];
   if (!map.getPane('gaspickpins')) {
