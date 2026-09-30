@@ -415,7 +415,10 @@ assert.match(html, /31\.8908351/);
 assert.match(html, /-81\.1960562/);
 assert.match(html, /32\.5497723/);
 assert.match(html, /-80\.2745141/);
-assert.match(html, /build:layers-scroll-20260929/);
+assert.match(html, /build:thu-stops-20261001/);
+assert.doesNotMatch(html, /build:gas-on-route-20261001/);
+assert.doesNotMatch(html, /build:gas-picks-20261001/);
+assert.doesNotMatch(html, /build:layers-scroll-20260929/);
 assert.doesNotMatch(html, /build:ios-polish-20260929/);
 assert.doesNotMatch(html, /build:gas-throttle-20260929/);
 assert.doesNotMatch(html, /build:gas-picks-20260929/);
@@ -442,11 +445,39 @@ assert.match(html, /class="layer-group">Food</);
 assert.match(html, /class="layer-group">Stops</);
 assert.match(html, /class="layer-group">Safety \/ Signal</);
 assert.match(html, /min-height:48px/);
-assert.match(html, /Gas picks today \(9\/29\)/);
+assert.match(html, /Gas picks \(9\/29, 10\/1\)/);
+assert.match(html, /id="chkGasPicks" checked/);
 assert.match(html, /31\.214705/);
 assert.match(html, /-81\.484981/);
 assert.match(html, /29\.915975/);
 assert.match(html, /-81\.363164/);
+assert.match(html, /32\.7922991/);
+assert.match(html, /-79\.9888917/);
+assert.match(html, /32\.8076579/);
+assert.match(html, /-79\.8786184/);
+assert.match(html, /regular \$3\.85 per GasBuddy Wed 9\/30 evening/);
+assert.match(html, /Backup gas Thu 10\/1: \$3\.94 per GasBuddy 9\/30/);
+assert.doesNotMatch(html, /Costco/);
+assert.match(html, /const ROUTE_GAS_MI = 1/);
+assert.match(html, /distToRouteGasMi\(s\.lat, s\.lon\)/);
+assert.match(html, /distToRouteGasMi\(p\.lat, p\.lon\) > ROUTE_GAS_MI/);
+assert.match(html, /coastal-gas-osm-v2/);
+assert.match(html, /tel:\+18435560991/);
+assert.match(html, /32\.7951111/);
+assert.match(html, /-80\.0284682/);
+assert.match(html, /32\.8546146/);
+assert.match(html, /-79\.8012669/);
+assert.match(html, /32\.9747027/);
+assert.match(html, /-79\.6682955/);
+assert.match(html, /33\.2011842/);
+assert.match(html, /-79\.4345458/);
+assert.match(html, /33\.2107398/);
+assert.match(html, /-79\.3845822/);
+assert.match(html, /Roadside Gullah sweetgrass basket stands/);
+assert.match(html, /No house tours Thursday/);
+assert.match(html, /id="chkRoad" checked/);
+assert.match(html, /https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=/);
+assert.doesNotMatch(html, /google\.com\/maps\/search\/\?api=1/);
 assert.match(html, /Prices loaded \(/);
 assert.match(html, /some areas cached/);
 assert.match(html, /backoffBase:\s*800/);
@@ -454,6 +485,37 @@ assert.match(html, /failureBudget:\s*3/);
 assert.match(html, /bypassCache/);
 assert.doesNotMatch(html, /Gas prices as of /);
 assert.doesNotMatch(html, /build:road-stops-20260929/);
+
+function milesOffRoute(lat, lon) {
+  function hav(lat1, lon1, lat2, lon2) {
+    const R = 3958.7613;
+    const toRad = Math.PI / 180;
+    const dLat = (lat2 - lat1) * toRad, dLon = (lon2 - lon1) * toRad;
+    const a = Math.sin(dLat / 2) ** 2 +
+      Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.sin(dLon / 2) ** 2;
+    return 2 * R * Math.asin(Math.min(1, Math.sqrt(a)));
+  }
+  let min = Infinity;
+  for (let i = 0; i < drive.length - 1; i++) {
+    const aLat = drive[i][0], aLon = drive[i][1], bLat = drive[i + 1][0], bLon = drive[i + 1][1];
+    const mid = ((aLat + bLat) / 2) * Math.PI / 180;
+    const kx = Math.max(0.01, 69.172 * Math.cos(mid));
+    const ky = 69.172;
+    const ax = aLon * kx, ay = aLat * ky, bx = bLon * kx, by = bLat * ky, px = lon * kx, py = lat * ky;
+    const dx = bx - ax, dy = by - ay;
+    const len2 = dx * dx + dy * dy;
+    let t = 0;
+    if (len2 > 1e-12) t = Math.max(0, Math.min(1, ((px - ax) * dx + (py - ay) * dy) / len2));
+    const d = hav(lat, lon, (ay + t * dy) / ky, (ax + t * dx) / kx);
+    if (d < min) min = d;
+  }
+  return min;
+}
+assert.ok(milesOffRoute(32.7922991, -79.9888917) <= 1, "West Ashley Circle K stays inside 1 mi");
+assert.ok(milesOffRoute(32.8076579, -79.8786184) <= 1, "Johnnie Dodds Circle K stays inside 1 mi");
+assert.ok(milesOffRoute(31.982049, -81.175621) > 1, "Savannah Murphy Express is off the route");
+assert.ok(milesOffRoute(32.8546146, -79.8012669) <= 1, "sweetgrass stands sit on US-17");
+assert.ok(milesOffRoute(32.9747027, -79.6682955) <= 1, "Sewee is on the US-17 drive");
 
 const home = JSON.parse(html.match(/const home = (\{.*?\});/)[1]);
 const today = "2026-09-29";
