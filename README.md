@@ -6,7 +6,7 @@ Static GitHub Pages map for the Sep–Oct 2026 coastal drive (Largo FL north to 
 
 The **Gas** checkbox loads fuel stations along the driving route. **Refresh gas** loads them again.
 
-Pins stay inside a corridor around the real drive (about 10 miles), spread across overnight stops and the legs between them. They are not a nationwide dump. Each lodging stop also keeps the three cheapest stations that have a regular price within 15 miles, from the same live feed.
+Pins stay within about 1 mile of the driving route. A station farther off the line is not shown, including the Gas picks and the cheap stations near overnight stops. Each lodging stop still keeps up to three cheapest regular-price stations within 15 miles, but only when those stations are also within about 1 mile of the route.
 
 ### Where the data comes from
 

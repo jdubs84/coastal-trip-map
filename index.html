@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:gas-picks-20261001 -->
+<html lang="en"><!-- build:thu-stops-20261001 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -1886,8 +1886,8 @@ html, body {
     font-size:0 !important;
     margin-top:10px !important;
   }
-  .popup p:has(a[href*="maps.apple.com"]) a,
-  .popup p:has(a[href*="google.com/maps"]) a {
+  .popup a[href*="google.com/maps"],
+  .popup a[href*="maps.google.com"] {
     display:flex;
     align-items:center;
     justify-content:center;
@@ -1900,17 +1900,39 @@ html, body {
     font-weight:700;
     text-decoration:none;
     text-align:center;
-  }
-  .popup a[href*="maps.apple.com"] {
     background:#1a9aa6;
     color:#041418 !important;
   }
-  .popup a[href*="google.com/maps"],
-  .popup a[href*="maps.google.com"] {
-    background:#f3f7fa;
-    color:#102028 !important;
+  .popup a[href*="maps.apple.com"] {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    box-sizing:border-box;
+    min-height:32px;
+    padding:6px 10px;
+    border-radius:10px;
+    font-size:14px !important;
+    font-weight:600;
+    text-decoration:none;
+    text-align:center;
+    background:transparent;
+    color:#9be7ee !important;
+    border:1px solid rgba(155,231,238,.4);
   }
   .popup a[href*="gasbuddy.com"] {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    width:100%;
+    box-sizing:border-box;
+    min-height:32px;
+    padding:6px 10px;
+    border-radius:10px;
+    font-size:14px !important;
+    font-weight:600;
+    text-decoration:none;
+    text-align:center;
     background:transparent;
     color:#9be7ee !important;
     border:1px solid rgba(155,231,238,.45);
@@ -2056,7 +2078,7 @@ html, body {
     <label title="Restaurants"><input type="checkbox" id="chkRestaurants"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#16a085"></span> Restaurants</label>
     <h2 class="layer-group">Stops</h2>
     <label title="Along-the-way sights"><input type="checkbox" id="chkSights"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#9b59d0"></span> Sights</label>
-    <label class="road-toggle" title="Roadside stops on the drive from Anastasia to Edisto, on by default"><input type="checkbox" id="chkRoad" checked> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#a15c38"></span> Road stops</label>
+    <label class="road-toggle" title="Roadside stops on the drive, including Thu 10/1 on US-17, on by default"><input type="checkbox" id="chkRoad" checked> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#a15c38"></span> Road stops</label>
     <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" autocomplete="off"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
     <h2 class="layer-group">Safety / Signal</h2>
     <label class="signal-toggle" title="Cell dead zones along the route, from FCC coverage data"><input type="checkbox" id="chkSignal"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#d9534f"></span> Signal gaps</label>
@@ -2744,8 +2766,8 @@ function stopMapsLinks(address) {
   // Street address only. Coordinates would open the planning pin instead of the arrival address.
   if (!address) return '';
   const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(address);
-  const google = 'https://www.google.com/maps/search/?api=1&query=' + encodeURIComponent(address);
-  return `<p><a href="${apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${google}" target="_blank" rel="noopener">Google Maps</a></p>`;
+  const google = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(address);
+  return `<p><a href="${google}" target="_blank" rel="noopener">Google Maps</a> · <a href="${apple}" target="_blank" rel="noopener">Apple Maps</a></p>`;
 }
 stops.forEach((s, i) => {
   const icon = L.divIcon({ className:'', html:`<div class="pin">${i+1}</div>`, iconSize:[44,44], iconAnchor:[22,22] });
@@ -2862,6 +2884,42 @@ function minDistToRouteMi(lat, lon) {
   let min = Infinity;
   for (let i = 0; i < driveLatLngs.length - 1; i++) {
     const a = driveLatLngs[i], b = driveLatLngs[i + 1];
+    const d = distPointToSegmentMi(lat, lon, a[0], a[1], b[0], b[1]);
+    if (d < min) min = d;
+  }
+  return min;
+}
+/* Gas pins only. Stations farther than this from the drive polyline are not drawn. */
+const ROUTE_GAS_MI = 1;
+const routeGasIndex = (function () {
+  const cell = 0.05;
+  const pad = (ROUTE_GAS_MI / 69) + cell;
+  const grid = new Map();
+  function put(i, j, seg) {
+    const k = i + ":" + j;
+    let bucket = grid.get(k);
+    if (!bucket) grid.set(k, bucket = []);
+    bucket.push(seg);
+  }
+  for (let n = 0; n < driveLatLngs.length - 1; n++) {
+    const a = driveLatLngs[n], b = driveLatLngs[n + 1];
+    const i0 = Math.floor((Math.min(a[0], b[0]) - pad) / cell);
+    const i1 = Math.floor((Math.max(a[0], b[0]) + pad) / cell);
+    const j0 = Math.floor((Math.min(a[1], b[1]) - pad) / cell);
+    const j1 = Math.floor((Math.max(a[1], b[1]) + pad) / cell);
+    for (let i = i0; i <= i1; i++) {
+      for (let j = j0; j <= j1; j++) put(i, j, n);
+    }
+  }
+  return { cell: cell, grid: grid };
+})();
+function distToRouteGasMi(lat, lon) {
+  const cell = routeGasIndex.cell;
+  const segs = routeGasIndex.grid.get(Math.floor(lat / cell) + ":" + Math.floor(lon / cell));
+  if (!segs || !segs.length) return Infinity;
+  let min = Infinity;
+  for (let k = 0; k < segs.length; k++) {
+    const a = driveLatLngs[segs[k]], b = driveLatLngs[segs[k] + 1];
     const d = distPointToSegmentMi(lat, lon, a[0], a[1], b[0], b[1]);
     if (d < min) min = d;
   }
@@ -3773,9 +3831,9 @@ const FOOD_POIS = [
   {
     "brand": "panera",
     "name": "Panera Charleston",
-    "lat": 32.795108,
-    "lon": -80.028516,
-    "note": "2000 Sam Rittenberg Boulevard, Charleston, SC 29407"
+    "lat": 32.7951111,
+    "lon": -80.0284682,
+    "note": "2000 Sam Rittenberg Boulevard, Charleston, SC 29407. Lunch stop Thu 10/1 (Edisto→Georgetown) · Open Thu 6 AM–9 PM · <a href=\"tel:+18435560991\">(843) 556-0991</a>"
   },
   {
     "brand": "panera",
@@ -3909,9 +3967,9 @@ FOOD_POIS.forEach(p => {
     const pinLat = p._pinLat != null ? p._pinLat : p.lat;
     const pinLon = p._pinLon != null ? p._pinLon : p.lon;
     const apple = `https://maps.apple.com/?q=${encodeURIComponent(p.name)}&ll=${p.lat},${p.lon}`;
-    const google = `https://www.google.com/maps/search/?api=1&query=${p.lat},${p.lon}`;
+    const google = `https://www.google.com/maps/dir/?api=1&destination=${p.lat},${p.lon}`;
     const tip = `<div class="popup"><h3>${p.name}</h3><p>${p.note || ''}</p><p class="off-route">${p.offRouteLabel || ''}</p>` +
-      `<p><a href="${apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${google}" target="_blank" rel="noopener">Google Maps</a></p></div>`;
+      `<p><a href="${google}" target="_blank" rel="noopener">Google Maps</a> · <a href="${apple}" target="_blank" rel="noopener">Apple Maps</a></p></div>`;
     const marker = L.marker([pinLat, pinLon], { icon, pane: 'foodpins', zIndexOffset: 800, riseOnHover: true })
       .bindPopup(tip).bindTooltip(p.name, { direction:'top', offset:[0,-8] });
     const key = brandLayers[p.brand] ? p.brand : 'bucees';
@@ -4304,12 +4362,11 @@ FOOD_POIS.forEach(p => {
   // A saved https URL in localStorage coastalGasPriceApi replaces this,
   // except the dead Pack tunnel https://pack.here2serve.us/gas.
   const STATION_PRICE_API = "https://gas.here2serve.us/gas";
-  const CACHE_KEY = "coastal-gas-osm-v1";
+  const CACHE_KEY = "coastal-gas-osm-v2";
   const CACHE_MS = 12 * 60 * 60 * 1000;
   const STEP_MI = 30;
   const RADIUS_M = 20000;
   const CHUNK = 5;
-  const CORRIDOR_MI = 10;
   const BIN_MI = 40;
   const OVERPASS = [
     "https://overpass-api.de/api/interpreter",
@@ -4737,9 +4794,10 @@ FOOD_POIS.forEach(p => {
   function selectStations(raw) {
     const located = [];
     raw.forEach(s => {
+      const off = distToRouteGasMi(s.lat, s.lon);
+      if (!(off <= ROUTE_GAS_MI)) return;
       const loc = locateOnRoute(s.lat, s.lon);
-      if (!(loc.off <= CORRIDOR_MI)) return;
-      const copy = Object.assign({}, s, loc);
+      const copy = Object.assign({}, s, loc, { off: off });
       if (Number.isFinite(copy.regular)) { copy.displayPrice = copy.regular; copy.displayGrade = "regular"; }
       else if (Number.isFinite(copy.midgrade)) { copy.displayPrice = copy.midgrade; copy.displayGrade = "midgrade"; }
       located.push(copy);
@@ -4793,7 +4851,8 @@ FOOD_POIS.forEach(p => {
       if (list[1]) take(list[1]);
     });
     if (picked.length > 46) picked.splice(46);
-    // Cheapest regular-price stations within 15 miles of each lodging stop.
+    // Cheapest regular-price stations within 15 miles of each lodging stop,
+    // and still within ROUTE_GAS_MI of the drive. Off-route stations stay hidden.
     // Added after the bin cap so a cheap station near a departure is not dropped.
     // Prices and names come from the stations already fetched; nothing is hardcoded.
     const NEAR_STOP_MI = 15;
@@ -4805,6 +4864,7 @@ FOOD_POIS.forEach(p => {
         if (price == null) return;
         const d = haversineMi(s.lat, s.lon, stop.lat, stop.lon);
         if (d > NEAR_STOP_MI) return;
+        if (!(distToRouteGasMi(s.lat, s.lon) <= ROUTE_GAS_MI)) return;
         nearby.push({ s, d, price });
       });
       nearby.sort((a, b) => a.price - b.price || a.d - b.d);
@@ -4817,6 +4877,7 @@ FOOD_POIS.forEach(p => {
         if (!station) {
           const loc = locateOnRoute(item.s.lat, item.s.lon);
           station = Object.assign({}, item.s, loc);
+          station.off = distToRouteGasMi(item.s.lat, item.s.lon);
           station.regular = item.price;
           station.displayPrice = item.price;
           station.displayGrade = "regular";
@@ -4885,8 +4946,8 @@ FOOD_POIS.forEach(p => {
     const q = encodeURIComponent([s.name, s.city, s.state].filter(Boolean).join(" "));
     const gb = "https://www.gasbuddy.com/home?search=" + q + "&fuel=1";
     const apple = "https://maps.apple.com/?q=" + encodeURIComponent(s.name || "gas") + "&ll=" + s.lat + "," + s.lon;
-    const google = "https://www.google.com/maps/search/?api=1&query=" + s.lat + "," + s.lon;
-    return `<div class="popup"><h3>${title}</h3>${brand}${placeHtml}<p class="off-route">${esc(s.relation || "")}</p>${cheapNear}${price}<p><a href="${gb}" target="_blank" rel="noopener">GasBuddy</a> · <a href="${apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${google}" target="_blank" rel="noopener">Google Maps</a></p></div>`;
+    const google = "https://www.google.com/maps/dir/?api=1&destination=" + s.lat + "," + s.lon;
+    return `<div class="popup"><h3>${title}</h3>${brand}${placeHtml}<p class="off-route">${esc(s.relation || "")}</p>${cheapNear}${price}<p><a href="${google}" target="_blank" rel="noopener">Google Maps</a> · <a href="${apple}" target="_blank" rel="noopener">Apple Maps</a> · <a href="${gb}" target="_blank" rel="noopener">GasBuddy</a></p></div>`;
   }
 
   function focusStation(s) {
@@ -5278,7 +5339,17 @@ FOOD_POIS.forEach(p => {
    Botany Bay — Census and Nominatim have no point for 1066 Botany Bay Rd. Pin is swing-gate node 9180230584
      at 32.5497723, -80.2745141, on the boundary of Botany Bay Heritage Preserve relation 13673817 where
      Botany Bay Road (way 12147323) enters. Parking-space node 11751795267 is beside the gate.
-   Popups use the same Apple / Google https links as the other layers. */
+   Thu 10/1, Edisto → Georgetown, geocoded 2026-09-30:
+   Sweetgrass basket stands — no single street address. The 1997 historical marker sits on US-17
+     near Hamlin Road (32° 51.274′ N, 79° 48.074′ W). Nominatim reverse of that point is US 17,
+     Mount Pleasant 29466, way 1180211438: 32.8546146, -79.8012669.
+   Sewee Visitor & Environmental Education Center, Nominatim node 10283991483,
+     32.9747027, -79.6682955, on US 17 in Awendaw 29429. Census puts 5821 N US Hwy 17 about 130 m north.
+   Hampton Plantation House, Nominatim way 1516691192, 33.2011842, -79.4345458, on Rutledge Road,
+     McClellanville. The state historic site park polygon centroid is about 0.25 mi west.
+   Hopsewee Plantation, Nominatim way 1346511215, addr 494 Hopsewee Road, Georgetown 29440:
+     33.2107398, -79.3845822.
+   Popups use Google Maps directions first, then a smaller Apple Maps link. */
 (function setupRoadStops(){
   const chk = document.getElementById('chkRoad');
   if (!chk || typeof map === 'undefined' || typeof L === 'undefined') return;
@@ -5330,6 +5401,30 @@ FOOD_POIS.forEach(p => {
       lat: 32.5497723,
       lon: -80.2745141,
       note: "CLOSED TUESDAYS and on scheduled hunt days. Open half an hour before sunrise to half an hour after sunset. Fill out the free day-use pass at the gate kiosk. Boneyard beach, oak avenue, ruins. No shell collecting, no dogs on the beach. Best on Wed 9/30 from the Edisto cabin. Entrance at 1066 Botany Bay Rd off SC-174."
+    },
+    {
+      name: "Sweetgrass basket stands",
+      lat: 32.8546146,
+      lon: -79.8012669,
+      note: "Roadside Gullah sweetgrass basket stands, cash is handy."
+    },
+    {
+      name: "Sewee Visitor Center",
+      lat: 32.9747027,
+      lon: -79.6682955,
+      note: "Open Thu 9-5, free. Red wolves, 1-mile trail. 843-928-3368. Top pick."
+    },
+    {
+      name: "Hampton Plantation State Historic Site",
+      lat: 33.2011842,
+      lon: -79.4345458,
+      note: "Grounds free, open 9-5. No house tours Thursday."
+    },
+    {
+      name: "Hopsewee Plantation",
+      lat: 33.2107398,
+      lon: -79.3845822,
+      note: "Tours on the hour until 3 PM, Tue-Sat. 843-546-7891. About 9 min from Clayton."
     }
   ];
   if (!map.getPane('roadpins')) {
@@ -5350,10 +5445,10 @@ FOOD_POIS.forEach(p => {
   }
   ROAD_STOPS.forEach(p => {
     const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(p.name) + '&ll=' + p.lat + ',' + p.lon;
-    const google = 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon;
+    const google = 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon;
     const html = '<div class="popup"><h3><strong>' + esc(p.name) + '</strong></h3>' +
       '<p>' + esc(p.note) + '</p>' +
-      '<p><a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a> · <a href="' + google + '" target="_blank" rel="noopener">Google Maps</a></p></div>';
+      '<p><a href="' + google + '" target="_blank" rel="noopener">Google Maps</a> · <a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a></p></div>';
     L.marker([p.lat, p.lon], { icon, pane: 'roadpins', zIndexOffset: 880, riseOnHover: true })
       .bindPopup(html, {
         maxWidth: 280,
@@ -5464,11 +5559,12 @@ FOOD_POIS.forEach(p => {
     }[c]));
   }
   GAS_PICKS.forEach(p => {
+    if (distToRouteGasMi(p.lat, p.lon) > ROUTE_GAS_MI) return;
     const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(p.name) + '&ll=' + p.lat + ',' + p.lon;
-    const google = 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon;
+    const google = 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon;
     const html = '<div class="popup"><h3><strong>' + esc(p.name) + '</strong></h3>' +
       '<p>' + esc(p.note) + '</p>' +
-      '<p><a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a> · <a href="' + google + '" target="_blank" rel="noopener">Google Maps</a></p></div>';
+      '<p><a href="' + google + '" target="_blank" rel="noopener">Google Maps</a> · <a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a></p></div>';
     L.marker([p.lat, p.lon], {
       icon: pumpIcon(p.top ? '#15803d' : '#0f4c5c'),
       pane: 'gaspickpins',
@@ -5581,14 +5677,14 @@ FOOD_POIS.forEach(p => {
     const am = amenityText(p);
     const hours = p.opening_hours ? '<p>' + esc(p.opening_hours) + '</p>' : '';
     const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(name) + '&ll=' + p.lat + ',' + p.lon;
-    const google = 'https://www.google.com/maps/search/?api=1&query=' + p.lat + ',' + p.lon;
+    const google = 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon;
     return '<div class="popup"><h3>' + esc(name) + '</h3>' +
       '<p>' + esc(where) + '</p>' +
       (meta ? '<p>' + esc(meta) + '</p>' : '') +
       caution +
       (am ? '<p>' + esc(am) + '</p>' : '') +
       hours +
-      '<p><a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a> · <a href="' + google + '" target="_blank" rel="noopener">Google Maps</a></p></div>';
+      '<p><a href="' + google + '" target="_blank" rel="noopener">Google Maps</a> · <a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a></p></div>';
   }
   REST_AREAS.forEach(p => {
     const name = fallbackName(p);
