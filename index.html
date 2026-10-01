@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:thu-optional-20261001 -->
+<html lang="en"><!-- build:thu-publix-20261001 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -231,6 +231,11 @@
     width:44px; height:44px; font-size:16px;
     background:linear-gradient(145deg, #e0b15a, #8a5a22);
     box-shadow:0 6px 16px rgba(0,0,0,.5), 0 0 0 1px rgba(224,177,90,.45);
+  }
+  .pin.pin-done {
+    width:28px; height:28px; font-size:14px;
+    background:#8a929c; color:rgba(255,255,255,.82);
+    border:2px solid #0b1014; box-shadow:none; opacity:.62;
   }
   .poi-section {
     margin-top:18px; padding-top:16px; border-top:1px solid var(--line);
@@ -2769,11 +2774,19 @@ function stopMapsLinks(address) {
   const google = 'https://www.google.com/maps/dir/?api=1&destination=' + encodeURIComponent(address);
   return `<p><a href="${google}" target="_blank" rel="noopener">Google Maps</a> · <a href="${apple}" target="_blank" rel="noopener">Apple Maps</a></p>`;
 }
+function lodgingStayDone(end, today) {
+  return typeof end === 'string' && end < today;
+}
+const todayET = easternDate(new Date());
 stops.forEach((s, i) => {
-  const icon = L.divIcon({ className:'', html:`<div class="pin">${i+1}</div>`, iconSize:[44,44], iconAnchor:[22,22] });
-  const m = L.marker([s.lat, s.lon], { icon, pane: 'stoppins', zIndexOffset: 1000, riseOnHover: true }).addTo(map);
+  const done = lodgingStayDone(s.end, todayET);
+  const icon = done
+    ? L.divIcon({ className:'', html:'<div class="pin pin-done">✓</div>', iconSize:[28,28], iconAnchor:[14,14] })
+    : L.divIcon({ className:'', html:`<div class="pin">${i+1}</div>`, iconSize:[44,44], iconAnchor:[22,22] });
+  const m = L.marker([s.lat, s.lon], { icon, pane: 'stoppins', zIndexOffset: done ? 400 : 1000, riseOnHover: true }).addTo(map);
   const checkin = s.checkin ? `<br/>${s.checkin}` : '';
-  m.bindPopup(`<div class="popup"><h3>${s.short}</h3><p><b>${s.date_range}</b><br/>${s.place}${checkin}<br/>${s.note || ''}</p>${stopMapsLinks(s.address)}</div>`, { maxWidth: 240, autoPanPaddingTopLeft: L.point(24, 72), autoPanPaddingBottomRight: L.point(24, 120) });
+  const title = done ? ('Done · ' + s.short) : s.short;
+  m.bindPopup(`<div class="popup"><h3>${title}</h3><p><b>${s.date_range}</b><br/>${s.place}${checkin}<br/>${s.note || ''}</p>${stopMapsLinks(s.address)}</div>`, { maxWidth: 240, autoPanPaddingTopLeft: L.point(24, 72), autoPanPaddingBottomRight: L.point(24, 120) });
   markers.push(m);
 });
 
@@ -5350,6 +5363,10 @@ FOOD_POIS.forEach(p => {
      in Rice Planters Pointe. Neither is the house. Pin is the named building, OSM way 195414662,
      addr:housenumber 1235, addr:street "Long Point Raod", centroid 32.8583556, -79.8231022.
      Hours and admission from the Boone Hall FAQ (Mon–Sat 9am–5pm, adult $30).
+   Publix Queensborough, geocoded 2026-10-01: Nominatim node 1987815489 (shop=supermarket, brand Publix,
+     branch Queensborough Shopping Center, addr 1000 Johnnie Dodds Boulevard unit 106, Mount Pleasant 29464):
+     32.8133883, -79.8676148. Census Public_AR_Current interpolates 1000 Johnnie Dodds Blvd to
+     32.8113597, -79.8679003 (TIGER range 948–1010, right side), about 0.14 mi south on the roadway.
    Popups use Google Maps directions first, then a smaller Apple Maps link. */
 (function setupRoadStops(){
   const chk = document.getElementById('chkRoad');
@@ -5396,6 +5413,12 @@ FOOD_POIS.forEach(p => {
       lat: 32.8583556,
       lon: -79.8231022,
       note: "Optional: Famous oak-lined avenue. Admission $30 adult, open Thu 9-5. Allow ~1 hr; only if you leave Edisto early."
+    },
+    {
+      name: "Publix Queensborough",
+      lat: 32.8133883,
+      lon: -79.8676148,
+      note: "Grocery + ice stop Thu 10/1, last Publix before the boat. Open 7 AM-9 PM. (843) 856-3000."
     }
   ];
   if (!map.getPane('roadpins')) {

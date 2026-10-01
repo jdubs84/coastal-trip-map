@@ -403,7 +403,8 @@ assert.doesNotMatch(html, /Botany Bay/);
 assert.doesNotMatch(html, /Old Sheldon Church/);
 assert.doesNotMatch(html, /Marshes of Glynn/);
 assert.doesNotMatch(html, /Murphy USA/);
-assert.match(html, /build:thu-optional-20261001/);
+assert.match(html, /build:thu-publix-20261001/);
+assert.doesNotMatch(html, /build:thu-optional-20261001/);
 assert.doesNotMatch(html, /build:thu-stops-20261001/);
 assert.doesNotMatch(html, /build:gas-on-route-20261001/);
 assert.doesNotMatch(html, /build:gas-picks-20261001/);
@@ -472,6 +473,24 @@ assert.match(html, /-79\.8231022/);
 assert.match(html, /Optional: Huge centuries-old live oak, free\. Open Thu 9-5, last entrance 4:50/);
 assert.match(html, /after the Ravenel Bridge\. Check hours\./);
 assert.match(html, /Admission \$30 adult, open Thu 9-5/);
+assert.match(html, /32\.8133883/);
+assert.match(html, /-79\.8676148/);
+assert.match(html, /Grocery \+ ice stop Thu 10\/1, last Publix before the boat\. Open 7 AM-9 PM\. \(843\) 856-3000\./);
+assert.match(html, /const todayET = easternDate\(new Date\(\)\)/);
+assert.match(html, /function lodgingStayDone\(end, today\)/);
+assert.match(html, /return typeof end === 'string' && end < today/);
+assert.match(html, /class="pin pin-done">✓</);
+assert.match(html, /Done · /);
+const stayFns = new Function(
+  html.match(/function easternDate\(d\) \{[\s\S]*?\n\}/)[0] + "\n" +
+  html.match(/function lodgingStayDone\(end, today\) \{[\s\S]*?\n\}/)[0] +
+  "\nreturn { easternDate, lodgingStayDone };"
+)();
+assert.equal(stayFns.easternDate(new Date("2026-10-01T03:30:00Z")), "2026-09-30");
+assert.equal(stayFns.easternDate(new Date("2026-10-01T04:00:00Z")), "2026-10-01");
+assert.equal(stayFns.lodgingStayDone("2026-09-29", "2026-10-01"), true, "Anastasia is done on Oct 1");
+assert.equal(stayFns.lodgingStayDone("2026-10-01", "2026-10-01"), false, "Edisto stays full on Oct 1");
+assert.equal(stayFns.lodgingStayDone("2026-10-01", "2026-10-02"), true, "Edisto dims after Oct 1");
 assert.match(html, /id="chkRoad" checked/);
 assert.match(html, /https:\/\/www\.google\.com\/maps\/dir\/\?api=1&destination=/);
 assert.doesNotMatch(html, /google\.com\/maps\/search\/\?api=1/);
