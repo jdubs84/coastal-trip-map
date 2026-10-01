@@ -5367,6 +5367,10 @@ FOOD_POIS.forEach(p => {
      branch Queensborough Shopping Center, addr 1000 Johnnie Dodds Boulevard unit 106, Mount Pleasant 29464):
      32.8133883, -79.8676148. Census Public_AR_Current interpolates 1000 Johnnie Dodds Blvd to
      32.8113597, -79.8679003 (TIGER range 948–1010, right side), about 0.14 mi south on the roadway.
+   Trader Joe's, geocoded 2026-10-01: Nominatim way 188282435 (shop=supermarket, building, brand Trader Joe's,
+     addr 401 Johnnie Dodds Boulevard, Mt Pleasant 29464), centroid 32.8048664, -79.8871391.
+     Census Public_AR_Current interpolates 401 Johnnie Dodds Blvd to 32.8052950, -79.8878207
+     (TIGER range 401–499, right side). About 1.3 mi west of the Publix pin.
    Popups use Google Maps directions first, then a smaller Apple Maps link. */
 (function setupRoadStops(){
   const chk = document.getElementById('chkRoad');
@@ -5415,6 +5419,13 @@ FOOD_POIS.forEach(p => {
       note: "Optional: Famous oak-lined avenue. Admission $30 adult, open Thu 9-5. Allow ~1 hr; only if you leave Edisto early."
     },
     {
+      name: "Trader Joe's",
+      lat: 32.8048664,
+      lon: -79.8871391,
+      address: "401 Johnnie Dodds Blvd, Mt Pleasant, SC 29464",
+      note: "Groceries, on US-17"
+    },
+    {
       name: "Publix Queensborough",
       lat: 32.8133883,
       lon: -79.8676148,
@@ -5439,8 +5450,11 @@ FOOD_POIS.forEach(p => {
   }
   ROAD_STOPS.forEach(p => {
     const apple = 'https://maps.apple.com/?q=' + encodeURIComponent(p.name) + '&ll=' + p.lat + ',' + p.lon;
-    const google = 'https://www.google.com/maps/dir/?api=1&destination=' + p.lat + ',' + p.lon;
+    const googleDest = p.address ? encodeURIComponent(p.address) : (p.lat + ',' + p.lon);
+    const google = 'https://www.google.com/maps/dir/?api=1&destination=' + googleDest;
+    const addressHtml = p.address ? ('<p>' + esc(p.address) + '</p>') : '';
     const html = '<div class="popup"><h3><strong>' + esc(p.name) + '</strong></h3>' +
+      addressHtml +
       '<p>' + esc(p.note) + '</p>' +
       '<p><a href="' + google + '" target="_blank" rel="noopener">Google Maps</a> · <a href="' + apple + '" target="_blank" rel="noopener">Apple Maps</a></p></div>';
     L.marker([p.lat, p.lon], { icon, pane: 'roadpins', zIndexOffset: 880, riseOnHover: true })
