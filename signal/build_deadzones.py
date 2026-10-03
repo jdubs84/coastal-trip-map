@@ -23,7 +23,7 @@ to_m = pyproj.Transformer.from_crs(4326, 5070, always_xy=True).transform
 to_ll = pyproj.Transformer.from_crs(5070, 4326, always_xy=True).transform
 STOPS = [(29.8792288, -81.2835277), (32.5117018, -80.3019843), (33.3768, -79.2945),
          (34.0501778, -77.9191689), (34.670439, -77.1430219), (35.2407085, -75.6226642),
-         (27.911904, -82.817489)]
+         (27.9095, -82.7873)]
 CARRIERS = {'att': 'AT&T', 'vzw': 'Verizon', 'tmo': 'T-Mobile'}
 
 route_m = transform(to_m, LineString(json.load(open('route.json'))['coordinates']))
