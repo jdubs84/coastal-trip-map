@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="en"><!-- build:return-prelim-20261003 -->
+<html lang="en"><!-- build:corolla-address-20261008 -->
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -2244,7 +2244,7 @@ html, body {
       <div>
         <h2>Corolla GhettOHway Condo</h2>
         <div class="dates">Oct 11 – Oct 13 · 2 nights</div>
-        <div class="place">Corolla, NC · street address TBD</div>
+        <div class="place">815 Caroline Ct, Corolla, NC 27927</div>
         <span class="chip">In 4:00 PM · out 10:00 AM</span>
       </div>
     </div>
@@ -2312,11 +2312,12 @@ const home = {"lat": 27.9095, "lon": -82.7873, "label": "Home (Largo)"};
      → 34.6704390, -77.1430219, OSM way 727384796 "Hammocks Beach State Park Visitors Center".
    6 Campground: search "Frisco Woods Campground, Frisco, North Carolina"
      → 35.2407085, -75.6226642, OSM way 696036817, addr 53124 NC Highway 12.
-   7 Town center: search "Corolla, North Carolina"
-     → 36.3847464, -75.8286983, OSM node 35783257 place=village.
-     No street address yet, so the pin stays on the town. The drive line continues
-     from the Frisco end of the 2026-09-26 route: OSRM overview=full, 2026-10-06,
-     2h 33m · 89.0 mi.
+   7 Condo: search "815 Caroline Ct, Corolla, NC 27927"
+     → 36.3291301, -75.8179108, house-number interpolation on OSM way 16493161
+     (Caroline Court, residential, Corolla, Currituck County). Census Public_AR_Current
+     interpolates the same address to 36.3291105, -75.8179648 (TIGER line 81392519,
+     range 801–899, right side), 5.3 m away. Both sit on Caroline Court. The drive
+     line is unchanged: OSRM overview=full, 2026-10-06, 2h 33m · 89.0 mi.
    Simmons Mainland Campground (secondary marker, not a route stop): bounded search "Simmons"
      → 34.6759340, -77.1496617, OSM way 1504132933. */
 const stops = [
@@ -2415,18 +2416,18 @@ const stops = [
   },
   {
     "name": "7. Corolla GhettOHway Condo",
-    "query": "Corolla, NC",
-    "lat": 36.3847464,
-    "lon": -75.8286983,
+    "query": "815 Caroline Ct, Corolla, NC 27927",
+    "lat": 36.3291301,
+    "lon": -75.8179108,
     "start": "2026-10-11",
     "end": "2026-10-13",
     "checkout": "10:00 AM",
     "note": "2 nights",
     "short": "Corolla GhettOHway Condo",
-    "place": "Corolla, NC · street address TBD",
+    "place": "815 Caroline Ct, Corolla, NC 27927",
     "date_range": "Oct 11 – Oct 13",
     "drive_in": "2h 33m · 89.0 mi",
-    "address": "Corolla, NC",
+    "address": "815 Caroline Ct, Corolla, NC 27927",
     "checkin": "Check-in 4:00 PM · check-out 10:00 AM"
   }
 ];
@@ -6161,7 +6162,7 @@ FOOD_POIS.forEach(p => {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js?v=20261006').catch(function () {});
+    navigator.serviceWorker.register('sw.js?v=20261008').catch(function () {});
   });
 }
 </script>
