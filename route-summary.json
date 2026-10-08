@@ -1,0 +1,23 @@
+{
+  "name": "Coastal road trip",
+  "origin": "Largo, FL",
+  "destination": "Corolla, NC",
+  "via": "FL → SC → NC",
+  "dates": {
+    "start": "2026-09-27",
+    "end": "2026-10-13"
+  },
+  "distance_mi": 1113.4,
+  "duration": "25h 39m",
+  "duration_min": 1539,
+  "source": "Published totals on the map (sidebar and brand). They are the OSRM driving route stored as routeGeo in index.html (overview=full, recomputed 2026-09-26), not recomputed in the browser. distance_mi is the sum of the per-leg drive_in miles. duration is the figure shown on the page; the legs below round to 25h 40m.",
+  "legs": [
+    { "from": "Home (Largo)", "to": "Anastasia SP bungalows", "duration": "4h 19m", "distance_mi": 212.9 },
+    { "from": "Anastasia SP bungalows", "to": "Edisto Beach SP cabins", "duration": "5h 35m", "distance_mi": 273.3 },
+    { "from": "Edisto Beach SP cabins", "to": "Clayton Cabin (Commander's Island)", "duration": "2h 36m", "distance_mi": 106.2 },
+    { "from": "Clayton Cabin (Commander's Island)", "to": "Carolina Beach SP cabin", "duration": "2h 59m", "distance_mi": 123.2 },
+    { "from": "Carolina Beach SP cabin", "to": "Hammocks Beach SP · Simmons cabin", "duration": "2h 11m", "distance_mi": 82.1 },
+    { "from": "Hammocks Beach SP · Simmons cabin", "to": "Frisco Woods camping cabin", "duration": "5h 27m", "distance_mi": 226.7 },
+    { "from": "Frisco Woods camping cabin", "to": "Corolla GhettOHway Condo", "duration": "2h 33m", "distance_mi": 89.0 }
+  ]
+}

@@ -1,5 +1,5 @@
 /* Offline cache for the trip map. Bump VERSION when index.html or local assets change. */
-const VERSION = "20261008";
+const VERSION = "20261008-fixes";
 const CACHE = "coastal-trip-" + VERSION;
 const ASSETS = [
   "./",
@@ -13,6 +13,7 @@ const ASSETS = [
   "./icon-192.png",
   "./icon-512.png",
   "./manifest.webmanifest",
+  "./route-summary.json",
   "./signal/deadzones-att.geojson",
   "./signal/deadzones-att.geojson?v=20251231-1",
   "./signal/deadzones-vzw.geojson",

@@ -54,7 +54,7 @@
   }
   .kicker {
     display:inline-flex; align-items:center; gap:8px;
-    font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
     color:#9be7ee; background:var(--sea-soft);
     padding:7px 11px; border-radius:999px;
     border:1px solid rgba(62,196,208,.22);
@@ -74,7 +74,7 @@
     background:var(--card); border:1px solid var(--line); border-radius:16px;
     padding:11px 12px; box-shadow:var(--shadow); backdrop-filter:blur(8px);
   }
-  .meta .label { font-size:.62rem; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700; }
+  .meta .label { font-size:12px; text-transform:uppercase; letter-spacing:.08em; color:var(--muted); font-weight:700; }
   .meta .value { font-size:.92rem; margin-top:4px; font-weight:700; letter-spacing:-.01em; color:#f0f4f7; }
   .toolbar { display:flex; gap:8px; margin-bottom:18px; flex-wrap:wrap; }
   .toolbar button {
@@ -92,7 +92,7 @@
   }
   .drive {
     position:relative; z-index:1;
-    font-size:.72rem; color:#9be7ee; font-weight:700;
+    font-size:12px; color:#9be7ee; font-weight:700;
     margin:4px 0 4px 44px; letter-spacing:.01em;
     display:inline-flex; align-items:center; gap:6px;
     background:rgba(62,196,208,.1); border:1px solid rgba(62,196,208,.2);
@@ -115,7 +115,7 @@
   .top { display:flex; gap:12px; }
   .badge {
     flex:none; width:30px; height:30px; border-radius:50%;
-    background:linear-gradient(145deg, #2eb8c4, #0e6b74);
+    background:linear-gradient(145deg, #18808c, #0a4550);
     color:#fff; display:flex; align-items:center; justify-content:center;
     font-size:.82rem; font-weight:750;
     box-shadow:0 6px 14px rgba(0,0,0,.4), 0 0 0 3px rgba(11,16,20,.95);
@@ -132,10 +132,10 @@
     border-color:rgba(240,198,116,.75);
     box-shadow:0 0 0 3px rgba(240,198,116,.16), var(--shadow);
   }
-  .stop.stop-next .badge { background:linear-gradient(145deg, #e0b15a, #8a5a22); }
+  .stop.stop-next .badge { background:linear-gradient(145deg, #f2d48a, #c4923a); color:#1a1408; }
   .stop .when {
     display:inline-block; margin-left:6px;
-    font-size:.62rem; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
+    font-size:12px; font-weight:800; letter-spacing:.06em; text-transform:uppercase;
     vertical-align:1px;
   }
   .stop-today .when { color:#9be7ee; }
@@ -144,7 +144,7 @@
   .dates { font-size:.88rem; font-weight:600; color:#d5dee6; }
   .place { color:var(--muted); font-size:.8rem; margin-top:3px; line-height:1.4; }
   .chip {
-    display:inline-block; margin-top:8px; font-size:.7rem; font-weight:700;
+    display:inline-block; margin-top:8px; font-size:12px; font-weight:700;
     color:#f0d7a0; background:rgba(180,140,60,.18);
     padding:4px 9px; border-radius:999px; border:1px solid rgba(240,215,160,.2);
   }
@@ -157,18 +157,29 @@
   .leaflet-container { background:#0d1418; font-family:inherit; }
   .leaflet-control-attribution {
     background:rgba(12,16,20,.78) !important; color:#8b9aab !important; backdrop-filter:blur(8px);
-    border-radius:8px 0 0 0; margin:0 !important; font-size:10px !important;
+    border-radius:8px 0 0 0; margin:0 !important; font-size:12px !important;
   }
   .leaflet-control-attribution a { color:#9be7ee !important; }
   .leaflet-popup-content-wrapper, .leaflet-popup-tip {
     background:#161c22; color:var(--ink); box-shadow:0 12px 28px rgba(0,0,0,.45);
   }
   .pin {
+    position:relative;
     width:44px; height:44px; border-radius:50%;
-    background:linear-gradient(145deg, #2eb8c4, #0e6b74);
+    background:linear-gradient(145deg, #18808c, #0a4550);
     color:#fff; display:flex; align-items:center; justify-content:center;
     font-weight:750; font-size:16px;
     border:3px solid #0b1014; box-shadow:0 8px 20px rgba(0,0,0,.5), 0 0 0 1px rgba(62,196,208,.35);
+  }
+  .pin.pin-today {
+    width:58px; height:58px; font-size:22px;
+    box-shadow:0 0 0 4px #f0c674, 0 0 0 7px #1a1408, 0 8px 20px rgba(0,0,0,.55);
+  }
+  .today-tag {
+    position:absolute; left:50%; top:-11px; transform:translateX(-50%);
+    background:#f0c674; color:#1a1408;
+    font-size:12px; font-weight:800; letter-spacing:.04em; text-transform:uppercase;
+    line-height:1.2; padding:1px 6px; border-radius:999px; white-space:nowrap;
   }
   .popup h3 { margin:0 0 4px; font-size:1.08rem; font-family:"Instrument Serif",Georgia,serif; font-weight:400; color:#f3f7fa; }
   .popup p { margin:0; color:var(--muted); font-size:.88rem; line-height:1.45; }
@@ -186,7 +197,7 @@
     display:none;
     align-items:center; justify-content:center;
     flex-direction:column; gap:6px;
-    padding:10px 12px 6px; margin:-6px -22px 10px;
+    padding:10px 12px 6px; margin:-6px 0 10px;
     cursor:grab; touch-action:none; user-select:none;
     -webkit-user-select:none;
   }
@@ -195,7 +206,7 @@
     background:rgba(255,255,255,.28);
   }
   .sheet-handle .hint {
-    font-size:.68rem; font-weight:650; letter-spacing:.04em;
+    font-size:12px; font-weight:650; letter-spacing:.04em;
     color:var(--muted); text-transform:uppercase;
   }
   @media (max-width:900px) {
@@ -244,24 +255,27 @@
   }
 
   .badge.home-badge {
-    background:linear-gradient(145deg, #c4a35a, #8a6a2e);
+    background:linear-gradient(145deg, #f2d48a, #c4923a);
+    color:#1a1408;
     font-size:1rem;
   }
   .stop.home-stop { border-color:rgba(196,163,90,.28); }
   .pin.home-pin {
-    background:linear-gradient(145deg, #c4a35a, #8a6a2e);
+    background:linear-gradient(145deg, #f2d48a, #c4923a);
+    color:#1a1408;
     box-shadow:0 8px 20px rgba(0,0,0,.5), 0 0 0 1px rgba(196,163,90,.45);
     font-size:16px;
   }
   .pin.pin-sub {
     width:44px; height:44px; font-size:16px;
-    background:linear-gradient(145deg, #e0b15a, #8a5a22);
+    background:linear-gradient(145deg, #f2d48a, #c4923a);
+    color:#1a1408;
     box-shadow:0 6px 16px rgba(0,0,0,.5), 0 0 0 1px rgba(224,177,90,.45);
   }
   .pin.pin-done {
     width:28px; height:28px; font-size:14px;
-    background:#8a929c; color:rgba(255,255,255,.82);
-    border:2px solid #0b1014; box-shadow:none; opacity:.62;
+    background:#5c656e; color:#fff;
+    border:2px solid #0b1014; box-shadow:none; opacity:.72;
   }
   .pin.pin-return {
     width:36px; height:36px; font-size:14px;
@@ -273,7 +287,7 @@
     margin-top:18px; padding-top:16px; border-top:1px solid var(--line);
   }
   .poi-heading {
-    font-size:.68rem; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    font-size:12px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
     color:#9be7ee; margin-bottom:10px;
   }
   .poi-item {
@@ -291,7 +305,7 @@
   }
   .poi-text { display:flex; flex-direction:column; gap:2px; min-width:0; }
   .poi-text strong { font-size:.82rem; color:#f0f4f7; font-weight:700; }
-  .poi-text em { font-style:normal; font-size:.72rem; color:var(--muted); line-height:1.35; }
+  .poi-text em { font-style:normal; font-size:12px; color:var(--muted); line-height:1.35; }
   .poi-pin {
     width:44px; height:44px; border-radius:50%;
     overflow:hidden; padding:0;
@@ -309,7 +323,7 @@
     background: rgba(14,107,116,.35) !important;
   }
   .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-    background: linear-gradient(145deg, #2eb8c4, #0e6b74) !important;
+    background: linear-gradient(145deg, #18808c, #0a4550) !important;
     color:#fff !important; font-weight:750 !important;
     box-shadow:0 6px 16px rgba(0,0,0,.45);
   }
@@ -317,7 +331,7 @@
   .trip-cluster {
     width:44px; height:44px; border-radius:50%;
     display:flex; align-items:center; justify-content:center;
-    background:#0e4c56; color:#fff; font-weight:750; font-size:16px;
+    background:#0a4550; color:#fff; font-weight:750; font-size:16px;
     border:3px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.5);
   }
   .poi-pin {
@@ -327,10 +341,10 @@
     transition: transform .25s ease;
   }
   .road-hint {
-    position:absolute; left:16px; top:16px; z-index:500;
+    position:absolute; left:54px; top:12px; z-index:500;
     background:rgba(12,16,20,.78); backdrop-filter:blur(10px);
     border:1px solid rgba(255,255,255,.1); border-radius:10px;
-    padding:6px 10px; font-size:.72rem; color:#9aa8b5;
+    padding:6px 10px; font-size:12px; color:#9aa8b5;
     pointer-events:none;
   }
 
@@ -343,7 +357,7 @@
     border-top:1px dashed rgba(255,255,255,.1);
   }
   .local-pois-heading {
-    font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
     color:#9be7ee; margin:0 0 6px;
   }
   .local-poi {
@@ -354,18 +368,18 @@
   }
   .local-poi:hover { border-color:rgba(62,196,208,.35); background:rgba(62,196,208,.08); }
   .local-poi strong { font-size:.78rem; color:#eef3f6; font-weight:650; }
-  .local-poi span { font-size:.68rem; color:var(--muted); line-height:1.35; }
+  .local-poi span { font-size:12px; color:var(--muted); line-height:1.35; }
   .local-gas {
     margin-top:8px; padding-top:8px;
     border-top:1px dashed rgba(245,197,66,.28);
   }
   .local-gas-heading {
-    font-size:.62rem; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
+    font-size:12px; font-weight:700; letter-spacing:.08em; text-transform:uppercase;
     color:#f5c542; margin:0 0 6px;
   }
   .off-route {
     display:inline-block; margin-top:2px;
-    font-size:.68rem; font-weight:650; color:#9be7ee;
+    font-size:12px; font-weight:650; color:#9be7ee;
     letter-spacing:.01em;
   }
   .popup .off-route { color:#9be7ee; margin:4px 0 0; }
@@ -435,7 +449,7 @@
 .layer-group {
   flex:1 1 100%; width:100%;
   margin:12px 2px 2px;
-  font-size:.68rem; font-weight:700; letter-spacing:.08em;
+  font-size:12px; font-weight:700; letter-spacing:.08em;
   text-transform:uppercase; color:var(--muted);
 }
 .layer-ico { width:16px; height:16px; flex:none; display:inline-flex; color:var(--ink); }
@@ -578,7 +592,7 @@ html.layers-sheet-open #foodLayers .signal-carriers label {
 }
 .gas-note {
   flex-basis:100%; width:100%; margin:2px 0 0;
-  font-size:.72rem; line-height:1.4; color:var(--muted);
+  font-size:12px; line-height:1.4; color:var(--muted);
 }
 .gas-note[hidden] { display:none !important; }
 .sight-poi-icon{z-index:720 !important; background:transparent !important; border:none !important}
@@ -598,11 +612,11 @@ html.layers-sheet-open #foodLayers .signal-carriers label {
 .signal-carriers { display:flex; flex-wrap:wrap; gap:6px; }
 .food-layers .signal-carriers label { padding:8px 12px; min-height:40px; font-size:.76rem; }
 .food-layers .signal-carriers label input { margin:0; }
-.signal-legend { margin:0; font-size:.72rem; line-height:1.45; color:var(--muted); overflow-wrap:anywhere; }
+.signal-legend { margin:0; font-size:12px; line-height:1.45; color:var(--muted); overflow-wrap:anywhere; }
 .signal-legend strong { color:var(--ink); font-weight:650; }
 .signal-swatch { display:inline-block; width:14px; height:10px; vertical-align:-1px; margin-right:4px;
   background:rgba(217,83,79,.45); border:1px solid #b3261e; border-radius:2px; }
-.signal-starlink { font-size:.72rem; line-height:1.45; color:var(--muted); }
+.signal-starlink { font-size:12px; line-height:1.45; color:var(--muted); }
 .signal-starlink summary { cursor:pointer; color:var(--ink); font-weight:650; padding:8px 0; }
 .signal-starlink ul { margin:4px 0 0; padding-left:18px; }
 .signal-starlink li { margin:0 0 4px; }
@@ -629,7 +643,7 @@ html.layers-sheet-open #foodLayers .signal-carriers label {
   }
   .tminus-kicker {
     display:flex; align-items:center; justify-content:space-between; gap:8px;
-    font-size:.62rem; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
+    font-size:12px; font-weight:700; letter-spacing:.14em; text-transform:uppercase;
     color:#7fdbe3; margin-bottom:8px;
   }
   .tminus-kicker .pulse {
@@ -660,18 +674,18 @@ html.layers-sheet-open #foodLayers .signal-carriers label {
     line-height:1.1;
   }
   .tminus-unit {
-    font-size:.55rem; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
+    font-size:12px; font-weight:700; letter-spacing:.12em; text-transform:uppercase;
     color:#7a8b9a; margin-top:3px;
   }
   .tminus-sub {
-    margin-top:8px; font-size:.68rem; color:#9aa8b5; line-height:1.35;
+    margin-top:8px; font-size:12px; color:#9aa8b5; line-height:1.35;
   }
   .tminus-sub strong { color:#cfeff2; font-weight:600; }
   .tminus-target, .tminus-next { display:none; }
   .tminus-target {
     margin-top:4px; font-size:.78rem; font-weight:750; color:#e8f7fa; line-height:1.3;
   }
-  .tminus-next { margin-top:2px; font-size:.68rem; color:#9aa8b5; line-height:1.3; }
+  .tminus-next { margin-top:2px; font-size:12px; color:#9aa8b5; line-height:1.3; }
   .tminus.compact .tminus-target, .tminus.compact .tminus-next { display:block; }
   .tminus.is-live .tminus-kicker { color:#f0c674; }
   .tminus.is-live .pulse { background:#f0c674; box-shadow:0 0 0 0 rgba(240,198,116,.6); }
@@ -738,12 +752,16 @@ html.layers-sheet-open #foodLayers .signal-carriers label {
   @media (max-width:900px) {
     .road-hint { display:none !important; }
     .tminus { right:10px; top:10px; max-width:46vw; }
-    .tminus-one { font-size:.82rem; }
+    .tminus-one { font-size:13px; }
+    .tminus.yield {
+      visibility:hidden;
+      pointer-events:none;
+    }
     .brand {
       left:12px;
       bottom: calc(var(--sheet-h, 42dvh) + 14px);
       max-width:min(200px, 58vw);
-      padding:8px 10px; font-size:.7rem;
+      padding:8px 10px; font-size:12px;
     }
     .brand span { display:none; }
     .btn-locate {
@@ -2072,6 +2090,33 @@ html, body {
     padding-bottom:calc(12px + env(safe-area-inset-bottom, 0px)) !important;
   }
 }
+/* Phone sheet: 16px side padding. The handle stretches back to the screen edges. */
+@media (max-width:900px) {
+  aside#tripSheet, aside {
+    padding-left:16px !important;
+    padding-right:16px !important;
+  }
+  #sheetHandle.sheet-handle {
+    margin-left:-16px !important;
+    margin-right:-16px !important;
+    width:auto !important;
+    max-width:none !important;
+  }
+  .layers-toggle {
+    width:100% !important;
+    margin-left:0 !important;
+    margin-right:0 !important;
+  }
+  aside.sheet-collapsed .food-layers {
+    margin-left:0 !important;
+    margin-right:0 !important;
+  }
+  .tminus.yield {
+    visibility:hidden !important;
+    pointer-events:none !important;
+  }
+}
+.return-toggle { display:none !important; }
 </style>
 <script>
 (function () {
@@ -2127,7 +2172,7 @@ html, body {
     <h2 class="layer-group">Stops</h2>
     <label title="Along-the-way sights"><input type="checkbox" id="chkSights"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#9b59d0"></span> Sights</label>
     <label class="road-toggle" title="Thu 10/1 roadside stops on US-17, including optional detours. Off by default, and hidden after that day."><input type="checkbox" id="chkRoad"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#a15c38"></span> Road stops</label>
-    <label class="return-toggle" title="Old southern return draft, not booked. Off by default. Being replanned. Drive-home dates predate the Corolla booking and need re-planning."><input type="checkbox" id="chkReturn"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#7c3aed"></span> Return (old draft — being replanned). Drive-home dates predate the Corolla booking and need re-planning.</label>
+    <label class="return-toggle" hidden title="Old southern return draft, not booked. Hidden while it is replanned. Drive-home dates predate the Corolla booking."><input type="checkbox" id="chkReturn" tabindex="-1"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#7c3aed"></span> Return (old draft — being replanned). Drive-home dates predate the Corolla booking and need re-planning.</label>
     <label class="rest-toggle" title="Rest areas, service areas, and welcome centers within about 3 km of I-4, I-95, US-17, and NC-12"><input type="checkbox" id="chkRest" autocomplete="off"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#1d4e89"></span> <span id="restCount">Rest areas</span></label>
     <h2 class="layer-group">Safety / Signal</h2>
     <label class="signal-toggle" title="Cell dead zones along the route, from FCC coverage data"><input type="checkbox" id="chkSignal"> <span class="layer-ico" aria-hidden="true"><svg viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a7 7 0 0 0-7 7c0 5.25 7 13 7 13s7-7.75 7-13a7 7 0 0 0-7-7zm0 9.5A2.5 2.5 0 1 1 12 6.5a2.5 2.5 0 0 1 0 5z"/></svg></span> <span class="sw" style="background:#d9534f"></span> Signal gaps</label>
@@ -2281,7 +2326,7 @@ html, body {
 /* Remembered before any layer reads its checkbox. A ?gas=1 or ?signal=1
    link still wins, because those setups run after this and set checked. */
 (function restoreLayerChoices() {
-  const ids = ["chkSights","chkRoad","chkReturn","chkGasPicks","chkBucees","chkCookout","chkWawa","chkPanera","chkRestaurants","chkRest","chkGas","chkSignal"];
+  const ids = ["chkSights","chkRoad","chkGasPicks","chkBucees","chkCookout","chkWawa","chkPanera","chkRestaurants","chkRest","chkGas","chkSignal"];
   let prefs = null;
   try { prefs = JSON.parse(localStorage.getItem("coastalLayerChoices-v2") || "null"); } catch (e) { prefs = null; }
   if (!prefs || typeof prefs !== "object") return;
@@ -2746,6 +2791,8 @@ map.on('popupopen', function (e) {
   var popup = e.popup;
   if (!popup || popup._iosFitting || window.innerWidth > 900) return;
   popup._iosFitting = true;
+  var card = document.getElementById('tminus');
+  if (card) card.classList.add('yield');
   var max = Math.max(260, Math.round(window.innerWidth * 0.9));
   var sheet = document.getElementById("tripSheet");
   var sheetH = 0;
@@ -2754,6 +2801,11 @@ map.on('popupopen', function (e) {
     if (rect.top < window.innerHeight) sheetH = Math.max(0, window.innerHeight - rect.top);
   }
   var topBar = 96;
+  var hub = document.getElementById('btnHub');
+  if (hub) {
+    var hubBottom = Math.round(hub.getBoundingClientRect().bottom);
+    if (hubBottom > 40 && hubBottom < 180) topBar = Math.max(topBar, hubBottom + 12);
+  }
   var chromeBottom = sheetH + 64;
   var maxH = Math.max(160, window.innerHeight - chromeBottom - topBar - 12);
   popup.options.maxWidth = max;
@@ -2776,6 +2828,11 @@ map.on('popupopen', function (e) {
     else if (r.right > window.innerWidth - 8) dx = r.right - (window.innerWidth - 8);
     if (dx || dy) map.panBy([dx, dy], { animate: false });
   });
+});
+map.on('popupclose', function () {
+  if (map._popup) return;
+  var card = document.getElementById('tminus');
+  if (card) card.classList.remove('yield');
 });
 // Back to Hub is a plain overlay beside the map, not inside a Leaflet pane.
 (function pinHubLink() {
@@ -2810,12 +2867,12 @@ map.getPane('popupPane').style.zIndex = 800;
 function coastalCluster(pane) {
   return L.markerClusterGroup({
     showCoverageOnHover: false,
-    maxClusterRadius: 48,
+    maxClusterRadius: 32,
     spiderfyOnMaxZoom: true,
     zoomToBoundsOnClick: true,
-    disableClusteringAtZoom: 13,
+    disableClusteringAtZoom: 12,
     removeOutsideVisibleBounds: false,
-    spiderfyDistanceMultiplier: 1.4,
+    spiderfyDistanceMultiplier: 1.8,
     pane: pane,
     clusterPane: pane,
     spiderLegPolylineOptions: { weight: 1.5, color: '#9be7ee', opacity: 0.85 },
@@ -2871,12 +2928,18 @@ function lodgingStayDone(end, today) {
   return typeof end === 'string' && end < today;
 }
 const todayET = easternDate(tripNow());
+function stopIsToday(s, today) {
+  return !!(s && s.start <= today && today < s.end);
+}
 stops.forEach((s, i) => {
   const done = lodgingStayDone(s.end, todayET);
+  const isToday = !done && stopIsToday(s, todayET);
   const icon = done
     ? L.divIcon({ className:'', html:'<div class="pin pin-done">✓</div>', iconSize:[28,28], iconAnchor:[14,14] })
-    : L.divIcon({ className:'', html:`<div class="pin">${i+1}</div>`, iconSize:[44,44], iconAnchor:[22,22] });
-  const m = L.marker([s.lat, s.lon], { icon, pane: 'stoppins', zIndexOffset: done ? 400 : 1000, riseOnHover: true }).addTo(map);
+    : (isToday
+      ? L.divIcon({ className:'stop-pin-icon', html:`<div class="pin pin-today">${i+1}<span class="today-tag">Today</span></div>`, iconSize:[58,58], iconAnchor:[29,29] })
+      : L.divIcon({ className:'', html:`<div class="pin">${i+1}</div>`, iconSize:[44,44], iconAnchor:[22,22] }));
+  const m = L.marker([s.lat, s.lon], { icon, pane: 'stoppins', zIndexOffset: isToday ? 1300 : (done ? 400 : 1000), riseOnHover: true }).addTo(map);
   const checkin = s.checkin ? `<br/>${s.checkin}` : '';
   const title = done ? ('Done · ' + s.short) : s.short;
   m.bindPopup(`<div class="popup"><h3>${title}</h3><p><b>${s.date_range}</b><br/>${s.place}${checkin}<br/>${s.note || ''}</p>${stopMapsLinks(s.address, s.dir)}</div>`, { maxWidth: 240, autoPanPaddingTopLeft: L.point(24, 72), autoPanPaddingBottomRight: L.point(24, 120) });
@@ -2891,11 +2954,138 @@ const simmonsCamp = {
   lon: -77.1496617,
   address: '100 FFA Camp Road, Swansboro, NC 28584'
 };
+let simmonsMarker = null;
 {
-  const icon = L.divIcon({ className:'', html:'<div class="pin pin-sub">S</div>', iconSize:[44,44], iconAnchor:[22,22] });
-  const m = L.marker([simmonsCamp.lat, simmonsCamp.lon], { icon, pane: 'stoppins', zIndexOffset: 900, riseOnHover: true }).addTo(map);
-  m.bindPopup(`<div class="popup"><h3>${simmonsCamp.name}</h3><p>${simmonsCamp.address}<br/>Campground. Check in at the Visitor Center first.</p>${stopMapsLinks(simmonsCamp.address)}</div>`, { maxWidth: 240, autoPanPaddingTopLeft: L.point(24, 72), autoPanPaddingBottomRight: L.point(24, 120) });
+  const icon = L.divIcon({ className:'stop-pin-icon', html:'<div class="pin pin-sub">S</div>', iconSize:[44,44], iconAnchor:[22,22] });
+  simmonsMarker = L.marker([simmonsCamp.lat, simmonsCamp.lon], { icon, pane: 'stoppins', zIndexOffset: 900, riseOnHover: true }).addTo(map);
+  simmonsMarker.bindPopup(`<div class="popup"><h3>${simmonsCamp.name}</h3><p>${simmonsCamp.address}<br/>Campground. Check in at the Visitor Center first.</p>${stopMapsLinks(simmonsCamp.address)}</div>`, { maxWidth: 240, autoPanPaddingTopLeft: L.point(24, 72), autoPanPaddingBottomRight: L.point(24, 120) });
 }
+
+/* Marker 5 (Hammocks) and the Simmons "S" pin are about half a mile apart, so
+   they stack at the leg zoom, and a gas cluster can land on the same pixels.
+   Shift the secondary pin and any cluster bubble until their centers clear. */
+function layoutCrowdedPins() {
+  if (typeof map === 'undefined' || !map) return;
+  document.querySelectorAll('.pin.pin-sub, .trip-cluster').forEach(el => { el.style.transform = ''; });
+  const pins = [];
+  markers.forEach(m => {
+    if (!m || !m.getLatLng) return;
+    const el = m.getElement && m.getElement();
+    const inner = el && el.querySelector('.pin');
+    if (!inner) return;
+    pins.push({ m, inner, pt: map.latLngToContainerPoint(m.getLatLng()) });
+  });
+  if (simmonsMarker) {
+    const el = simmonsMarker.getElement && simmonsMarker.getElement();
+    const inner = el && el.querySelector('.pin');
+    if (inner) {
+      const pt = map.latLngToContainerPoint(simmonsMarker.getLatLng());
+      let nearest = null;
+      let nd = Infinity;
+      pins.forEach(p => {
+        const d = Math.hypot(pt.x - p.pt.x, pt.y - p.pt.y);
+        if (d < nd) { nd = d; nearest = p; }
+      });
+      const need = nearest && nearest.inner.classList.contains('pin-today') ? 82 : 60;
+      if (nearest && nd < need) {
+        const size = 44;
+        const margin = 10;
+        const maxY = window.innerHeight - 150;
+        let ux = (pt.x - nearest.pt.x) / (nd || 1);
+        let uy = (pt.y - nearest.pt.y) / (nd || 1);
+        if (nd < 6) { ux = 0.85; uy = -0.35; }
+        const base = Math.atan2(uy, ux);
+        let placed = null;
+        for (let i = 0; i < 16; i++) {
+          const ang = base + i * (Math.PI / 8) * (i % 2 === 0 ? 1 : -1);
+          const x = nearest.pt.x + Math.cos(ang) * need;
+          const y = nearest.pt.y + Math.sin(ang) * need;
+          if (x - size / 2 >= margin && y - size / 2 >= margin &&
+              x + size / 2 <= window.innerWidth - margin && y + size / 2 <= maxY) {
+            placed = { x: x, y: y };
+            break;
+          }
+        }
+        if (!placed) {
+          placed = {
+            x: Math.max(margin + size / 2, Math.min(window.innerWidth - margin - size / 2, nearest.pt.x + ux * need)),
+            y: Math.max(margin + size / 2, Math.min(maxY, nearest.pt.y + uy * need))
+          };
+        }
+        inner.style.transform = 'translate(' + (placed.x - pt.x).toFixed(1) + 'px,' + (placed.y - pt.y).toFixed(1) + 'px)';
+      } else {
+        inner.style.transform = '';
+      }
+      pins.push({ m: simmonsMarker, inner, pt });
+    }
+  }
+  const obstacles = [];
+  pins.forEach(p => {
+    const pr = p.inner.getBoundingClientRect();
+    if (pr.width < 2) return;
+    obstacles.push({
+      x: pr.left + pr.width / 2,
+      y: pr.top + pr.height / 2,
+      need: pr.width / 2 + 22 + 18
+    });
+  });
+  const half = 22;
+  const edge = 8;
+  const maxY = window.innerHeight - 150;
+  function clusterFits(x, y) {
+    if (x - half < edge || y - half < edge || x + half > window.innerWidth - edge || y + half > maxY) return false;
+    return !obstacles.some(o => Math.hypot(x - o.x, y - o.y) < o.need - 2);
+  }
+  document.querySelectorAll('.trip-cluster').forEach(bubble => {
+    const icon = bubble.closest('.leaflet-marker-icon');
+    if (!icon || !icon.getBoundingClientRect) return;
+    const r = icon.getBoundingClientRect();
+    let x = r.left + r.width / 2;
+    let y = r.top + r.height / 2;
+    const ox = x;
+    const oy = y;
+    for (let pass = 0; pass < 6; pass++) {
+      obstacles.forEach(o => {
+        let dx = x - o.x;
+        let dy = y - o.y;
+        let d = Math.hypot(dx, dy);
+        if (d >= o.need) return;
+        if (d < 4) { dx = 0.9; dy = -0.4; d = 1; }
+        const push = o.need - Math.min(d, o.need);
+        x += (dx / d) * push;
+        y += (dy / d) * push;
+      });
+    }
+    if (!clusterFits(x, y)) {
+      let nearest = null;
+      let nd = Infinity;
+      obstacles.forEach(o => {
+        const d = Math.hypot(ox - o.x, oy - o.y);
+        if (d < nd) { nd = d; nearest = o; }
+      });
+      if (nearest) {
+        const base = Math.atan2(oy - nearest.y, ox - nearest.x);
+        for (let i = 0; i < 16; i++) {
+          const ang = base + i * (Math.PI / 8) * (i % 2 === 0 ? 1 : -1);
+          const cx = nearest.x + Math.cos(ang) * nearest.need;
+          const cy = nearest.y + Math.sin(ang) * nearest.need;
+          if (clusterFits(cx, cy)) { x = cx; y = cy; break; }
+        }
+      }
+    }
+    const tx = x - ox;
+    const ty = y - oy;
+    bubble.style.transform = Math.hypot(tx, ty) > 0.5
+      ? ('translate(' + tx.toFixed(1) + 'px,' + ty.toFixed(1) + 'px)')
+      : '';
+  });
+}
+map.on('zoomend moveend layeradd', function () {
+  layoutCrowdedPins();
+});
+window.__layoutCrowdedPins = layoutCrowdedPins;
+setTimeout(layoutCrowdedPins, 400);
+setTimeout(layoutCrowdedPins, 1200);
 
 
 // Keep sight icons from sitting on top of lodging number pins
@@ -3062,7 +3252,7 @@ const poiCluster = L.markerClusterGroup({
   iconCreateFunction: function(cluster) {
     const n = cluster.getChildCount();
     return L.divIcon({
-      html: `<div class="trip-cluster" style="background:linear-gradient(145deg,#9b59d0,#6b3fa0)">${n}</div>`,
+      html: `<div class="trip-cluster" style="background:linear-gradient(145deg,#7a3eb0,#4c2478)">${n}</div>`,
       className: 'trip-cluster-icon',
       iconSize: [44,44],
       iconAnchor: [22,22]
@@ -4627,6 +4817,7 @@ FOOD_POIS.forEach(p => {
   const BIN_MI = 40;
   const OVERPASS = [
     "https://overpass-api.de/api/interpreter",
+    "https://overpass.openstreetmap.fr/api/interpreter",
     "https://overpass.kumi.systems/api/interpreter"
   ];
 
@@ -4689,20 +4880,35 @@ FOOD_POIS.forEach(p => {
     if (Number.isNaN(d.getTime())) return "";
     return d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
   }
-  function shortPriceLine(summary) {
-    if (!summary || summary.skipped || summary.aborted) return "";
+  let lastGoodPriceAt = null;
+  function unavailableLine(when) {
+    const t = when || clockTime(lastGoodPriceAt);
+    return t ? ("Gas prices unavailable — last updated " + t) : "Gas prices unavailable.";
+  }
+  function shortPriceLine(summary, flags) {
+    flags = flags || {};
+    if (!summary || summary.skipped || summary.aborted) {
+      if (flags.priceFailed || flags.placesFailed) return unavailableLine(clockTime(flags.savedAt));
+      return "";
+    }
     const n = summary.priced || 0;
+    const when = clockTime(summary.newest) || clockTime(summary.oldest) || clockTime(flags.savedAt);
+    if (summary.newest) lastGoodPriceAt = summary.newest;
+    else if (summary.oldest) lastGoodPriceAt = summary.oldest;
+    const bad = !summary.ok || !!summary.stale || !!flags.priceFailed;
+    if (bad) return unavailableLine(when);
     if (summary.ok && n > 0) {
       const mixed = !!(summary.partial || summary.usedCache);
       let line = "Prices loaded (" + n + " " + (n === 1 ? "station" : "stations") + (mixed ? ", some areas cached" : "") + ")";
       const reported = clockTime(summary.newest);
       if (reported) line += " · reported " + reported;
-      return line + ".";
+      if (flags.placesFailed) line += ". Station locations did not all load.";
+      else line += ".";
+      return line;
     }
     if (!summary.ok) {
-      if (summary.text && /No pump prices/i.test(summary.text)) return "No pump prices for this route.";
-      if (!summary.text) return "";
-      return "Gas prices did not load.";
+      if (summary.text && /No pump prices/i.test(summary.text) && !when) return "No pump prices for this route.";
+      return unavailableLine(when);
     }
     return "";
   }
@@ -4755,7 +4961,11 @@ FOOD_POIS.forEach(p => {
     opts = opts || {};
     const summary = opts.summary || null;
     const loading = opts.loading || "";
-    let short = shortPriceLine(summary);
+    let short = shortPriceLine(summary, {
+      priceFailed: !!opts.priceFailed,
+      placesFailed: !!opts.placesFailed,
+      savedAt: opts.savedAt || null
+    });
     if (!short) short = loading || "Loading fuel stops…";
     setGasNote(short, detailLine(summary, opts.extra || "", loading, opts.picked || null));
   }
@@ -5292,6 +5502,10 @@ FOOD_POIS.forEach(p => {
       s.marker = marker;
     });
     renderStopLists(picked);
+    if (window.__layoutCrowdedPins) {
+      setTimeout(window.__layoutCrowdedPins, 60);
+      setTimeout(window.__layoutCrowdedPins, 500);
+    }
     window.__gasDebug = {
       count: picked.length,
       priced: picked.filter(s => Number.isFinite(s.displayPrice)).length,
@@ -5430,7 +5644,15 @@ FOOD_POIS.forEach(p => {
     else if (chunkErrors) extra = "Some stretches did not load.";
     else if (fromPartial) extra = "Saved stations from the last load. Refresh gas retries missing stretches.";
     const summary = CoastalPriceFeed.priceUpdateSummary(priceResult, priceLoadedAt || Date.now());
-    showGasStatus({ summary: summary, extra: extra, picked: picked });
+    const priceFailed = !!(priceResult && (priceResult.error || priceResult.failedTiles));
+    showGasStatus({
+      summary: summary,
+      extra: extra,
+      picked: picked,
+      priceFailed: priceFailed,
+      placesFailed: chunkErrors > 0,
+      savedAt: summary && (summary.newest || summary.oldest || lastGoodPriceAt)
+    });
     if (priceResult && priceResult.boxes && priceResult.boxes.length) lastBoxes = priceResult.boxes;
     if (window.__gasDebug) {
       window.__gasDebug.priceNote = summary.text;
@@ -6122,17 +6344,17 @@ FOOD_POIS.forEach(p => {
     if (lab) lab.classList.toggle('on', !!on);
   }
   function apply() {
-    const on = !!chk.checked;
-    setOn(on);
-    if (on) { if (!map.hasLayer(layer)) map.addLayer(layer); }
-    else if (map.hasLayer(layer)) map.removeLayer(layer);
+    /* Stale draft stays off the map. The line and stops remain in this file. */
+    chk.checked = false;
+    setOn(false);
+    if (map.hasLayer(layer)) map.removeLayer(layer);
   }
   chk.addEventListener('change', apply);
   apply();
 })();
 
 (function setupLayerChoices() {
-  const ids = ["chkSights","chkRoad","chkReturn","chkGasPicks","chkBucees","chkCookout","chkWawa","chkPanera","chkRestaurants","chkRest","chkGas","chkSignal"];
+  const ids = ["chkSights","chkRoad","chkGasPicks","chkBucees","chkCookout","chkWawa","chkPanera","chkRestaurants","chkRest","chkGas","chkSignal"];
   const root = document.getElementById("foodLayers");
   function write() {
     const out = {};
@@ -6162,7 +6384,7 @@ FOOD_POIS.forEach(p => {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js?v=20261008').catch(function () {});
+    navigator.serviceWorker.register('sw.js?v=20261008-fixes').catch(function () {});
   });
 }
 </script>
