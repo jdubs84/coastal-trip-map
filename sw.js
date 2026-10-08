@@ -1,5 +1,5 @@
 /* Offline cache for the trip map. Bump VERSION when index.html or local assets change. */
-const VERSION = "20261006";
+const VERSION = "20261008";
 const CACHE = "coastal-trip-" + VERSION;
 const ASSETS = [
   "./",
