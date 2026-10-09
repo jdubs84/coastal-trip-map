@@ -2129,25 +2129,29 @@ html, body {
     visibility:hidden !important;
     pointer-events:none !important;
   }
-  /* A full sheet lifts Locate onto the credit line. Park Locate on the
-     right, under the countdown and clear of zoom, and keep the credit
-     in the open column to the left of that card. */
+  /* A full sheet used to drop Locate onto the route badge. Keep it on the
+     map, in the gap beside Hub and left of the countdown, above the sheet. */
   html.locate-beside-zoom .btn-locate,
   html.locate-beside-zoom #btnLocate {
-    position: fixed !important;
-    z-index: 1000 !important;
-    top: calc(168px + env(safe-area-inset-top, 0px)) !important;
+    position: absolute !important;
+    z-index: 900 !important;
+    top: calc(8px + env(safe-area-inset-top, 0px)) !important;
     bottom: auto !important;
-    left: auto !important;
-    right: calc(12px + env(safe-area-inset-right, 0px)) !important;
+    left: calc(152px + env(safe-area-inset-left, 0px)) !important;
+    right: auto !important;
+    width: 48px !important;
+    height: 48px !important;
+  }
+  html.locate-beside-zoom .tminus {
+    max-width: calc(48vw - 20px) !important;
   }
   html.locate-beside-zoom .leaflet-bottom.leaflet-right {
-    top: calc(58px + env(safe-area-inset-top, 0px)) !important;
+    top: calc(64px + env(safe-area-inset-top, 0px)) !important;
     bottom: auto !important;
     left: calc(74px + env(safe-area-inset-left, 0px)) !important;
     right: auto !important;
-    width: 112px !important;
-    max-width: 112px !important;
+    width: 120px !important;
+    max-width: 120px !important;
   }
   html.locate-beside-zoom .leaflet-control-attribution {
     font-size: 12px !important;
@@ -3797,15 +3801,11 @@ arrangeStopList();
       separateLocateFromZoom();
     });
   }
-  function parkLocate(beside) {
+  function parkLocate() {
     var btn = document.getElementById('btnLocate');
     var wrap = document.getElementById('map-wrap');
-    if (!btn || !wrap) return;
-    if (beside) {
-      if (btn.parentElement !== document.body) document.body.appendChild(btn);
-    } else if (btn.parentElement !== wrap) {
-      wrap.appendChild(btn);
-    }
+    if (!btn || !wrap || btn.parentElement === wrap) return;
+    wrap.appendChild(btn);
   }
   function separateLocateFromZoom() {
     var root = document.documentElement;
@@ -3813,11 +3813,11 @@ arrangeStopList();
     var zoom = document.querySelector('.leaflet-control-zoom');
     if (!mq.matches || !btn || !zoom) {
       root.classList.remove('locate-beside-zoom');
-      parkLocate(false);
+      parkLocate();
       return;
     }
     root.classList.remove('locate-beside-zoom');
-    parkLocate(false);
+    parkLocate();
     var a = btn.getBoundingClientRect();
     var b = zoom.getBoundingClientRect();
     var pad = 8;
@@ -3825,7 +3825,6 @@ arrangeStopList();
       a.left < b.right + pad && a.right > b.left - pad &&
       a.top < b.bottom + pad && a.bottom > b.top - pad;
     if (hit) root.classList.add('locate-beside-zoom');
-    parkLocate(hit);
   }
   window.__separateLocateFromZoom = separateLocateFromZoom;
   window.__setSheetHeight = (h) => apply(h, true);
@@ -3836,7 +3835,7 @@ arrangeStopList();
       document.documentElement.classList.remove('controls-collapsed', 'locate-beside-zoom');
       aside.classList.remove('sheet-collapsed','sheet-dragging','layers-open');
       closeLayerSheet();
-      parkLocate(false);
+      parkLocate();
       return;
     }
     if (!narrow.matches && layersOpen()) closeLayerSheet();
@@ -6563,7 +6562,7 @@ FOOD_POIS.forEach(p => {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js?v=20261009-attribution').catch(function () {});
+    navigator.serviceWorker.register('sw.js?v=20261009-locate-map').catch(function () {});
   });
 }
 </script>
