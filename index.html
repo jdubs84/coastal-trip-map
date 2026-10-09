@@ -318,21 +318,35 @@
   }
 
 
-  /* stacked POIs */
+  /* Clusters are a stacked rounded square, not the teal stop circle. */
   .marker-cluster-small, .marker-cluster-medium, .marker-cluster-large {
-    background: rgba(14,107,116,.35) !important;
+    background: transparent !important;
   }
   .marker-cluster-small div, .marker-cluster-medium div, .marker-cluster-large div {
-    background: linear-gradient(145deg, #18808c, #0a4550) !important;
-    color:#fff !important; font-weight:750 !important;
-    box-shadow:0 6px 16px rgba(0,0,0,.45);
+    background: #f6e2b8 !important;
+    color:#1a1408 !important; font-weight:800 !important;
+    border-radius:8px !important;
+    border:2px solid #1a1408 !important;
+    box-shadow:-6px -6px 0 0 #e0b15a, -6px -6px 0 2px #1a1408;
   }
   .trip-cluster-icon { background:transparent !important; border:none !important; }
   .trip-cluster {
-    width:44px; height:44px; border-radius:50%;
+    width:44px; height:44px; position:relative;
+    background:transparent !important; border:none !important;
+    box-shadow:none !important; border-radius:0 !important;
+  }
+  .trip-cluster span {
+    position:absolute; right:0; bottom:0;
+    width:32px; height:32px; border-radius:8px;
     display:flex; align-items:center; justify-content:center;
-    background:#0a4550; color:#fff; font-weight:750; font-size:16px;
-    border:3px solid #fff; box-shadow:0 4px 12px rgba(0,0,0,.5);
+    background:#f6e2b8; color:#1a1408;
+    font-weight:800; font-size:16px; line-height:1;
+    border:2px solid #1a1408;
+    box-shadow:-7px -7px 0 0 #e0b15a, -7px -7px 0 2px #1a1408;
+  }
+  .trip-cluster-sight span {
+    background:#efe2fb; color:#1a1024;
+    box-shadow:-7px -7px 0 0 #7a3eb0, -7px -7px 0 2px #1a1024;
   }
   .poi-pin {
     width:44px !important; height:44px !important;
@@ -2115,6 +2129,14 @@ html, body {
     visibility:hidden !important;
     pointer-events:none !important;
   }
+  /* Open sheet lifts Locate into the zoom buttons. Park it beside them. */
+  html.locate-beside-zoom .btn-locate,
+  html.locate-beside-zoom #btnLocate {
+    top: calc(64px + env(safe-area-inset-top, 0px)) !important;
+    bottom: auto !important;
+    left: calc(76px + env(safe-area-inset-left, 0px)) !important;
+    right: auto !important;
+  }
 }
 .return-toggle { display:none !important; }
 </style>
@@ -2879,7 +2901,7 @@ function coastalCluster(pane) {
     iconCreateFunction: function (cluster) {
       var n = cluster.getChildCount();
       return L.divIcon({
-        html: '<div class="trip-cluster">' + n + '</div>',
+        html: '<div class="trip-cluster" title="' + n + ' places"><span>' + n + '</span></div>',
         className: 'trip-cluster-icon',
         iconSize: [44, 44],
         iconAnchor: [22, 22]
@@ -3252,7 +3274,7 @@ const poiCluster = L.markerClusterGroup({
   iconCreateFunction: function(cluster) {
     const n = cluster.getChildCount();
     return L.divIcon({
-      html: `<div class="trip-cluster" style="background:linear-gradient(145deg,#7a3eb0,#4c2478)">${n}</div>`,
+      html: `<div class="trip-cluster trip-cluster-sight" title="${n} sights"><span>${n}</span></div>`,
       className: 'trip-cluster-icon',
       iconSize: [44,44],
       iconAnchor: [22,22]
@@ -3349,6 +3371,93 @@ function nearestRouteIndex(lat, lon) {
 var frameLocked = false;
 map.on('dragstart', function () { frameLocked = true; });
 map.on('zoomstart', function (ev) { if (ev && ev.originalEvent) frameLocked = true; });
+function markerScreenBox(marker) {
+  var el = marker && marker.getElement && marker.getElement();
+  if (!el) return null;
+  var pin = el.querySelector('.pin');
+  if (!pin) return null;
+  var r = pin.getBoundingClientRect();
+  if (r.width < 2) return null;
+  var tag = pin.querySelector('.today-tag');
+  if (!tag) return r;
+  var t = tag.getBoundingClientRect();
+  var top = Math.min(r.top, t.top);
+  var left = Math.min(r.left, t.left);
+  var right = Math.max(r.right, t.right);
+  var bottom = Math.max(r.bottom, t.bottom);
+  return { top: top, left: left, right: right, bottom: bottom, width: right - left, height: bottom - top };
+}
+/* The countdown sits on the top-right of the phone. Stops north of the
+   framed leg (Corolla, above the Frisco leg) land in that corner. Pan
+   them below the card without covering a stop with the sheet. */
+function keepStopsClearOfCountdown() {
+  if (frameLocked) return;
+  var phone = window.innerWidth <= 900;
+  var card = document.getElementById('tminus');
+  var cr = null;
+  if (card && phone) {
+    var cardStyle = window.getComputedStyle(card);
+    if (cardStyle.visibility !== 'hidden' && cardStyle.display !== 'none') {
+      var box = card.getBoundingClientRect();
+      if (box.width > 8 && box.height > 8) cr = box;
+    }
+  }
+  var sheet = document.getElementById('tripSheet');
+  var floor = window.innerHeight - 16;
+  if (phone && sheet) {
+    var sheetTop = sheet.getBoundingClientRect().top;
+    if (sheetTop > 40 && sheetTop < window.innerHeight) floor = sheetTop - 10;
+  }
+  var list = markers.slice();
+  if (typeof homeMarker !== 'undefined' && homeMarker) list.push(homeMarker);
+  if (simmonsMarker) list.push(simmonsMarker);
+  function coveredPx() {
+    var need = 0;
+    function consider(r) {
+      if (!cr || !r || r.width < 2) return;
+      var overlapX = Math.min(r.right, cr.right) - Math.max(r.left, cr.left);
+      if (overlapX < 8) return;
+      if (r.top < cr.bottom + 8) need = Math.max(need, cr.bottom + 8 - r.top);
+    }
+    list.forEach(function (m) { consider(markerScreenBox(m)); });
+    if (!phone) return need;
+    document.querySelectorAll('.trip-cluster span').forEach(function (el) {
+      var r = el.getBoundingClientRect();
+      if (r.bottom < 0 || r.right < 0 || r.left > window.innerWidth) return;
+      consider(r);
+    });
+    return need;
+  }
+  function clippedTopPx() {
+    var need = 0;
+    list.forEach(function (m) {
+      var r = markerScreenBox(m);
+      if (!r) return;
+      if (r.right < 0 || r.left > window.innerWidth) return;
+      if (r.bottom < 8) return;
+      if (r.top < 18) need = Math.max(need, 18 - r.top);
+    });
+    return need;
+  }
+  function lowestBottom() {
+    var lowest = 0;
+    list.forEach(function (m) {
+      var r = markerScreenBox(m);
+      if (!r) return;
+      if (r.top > window.innerHeight || r.bottom < 0) return;
+      var el = m.getElement && m.getElement();
+      var pin = el && el.querySelector('.pin-done');
+      if (pin) return;
+      if (r.bottom > lowest) lowest = r.bottom;
+    });
+    return lowest;
+  }
+  var need = Math.max(coveredPx(), clippedTopPx());
+  if (need < 2) return;
+  var room = floor - lowestBottom();
+  var dy = Math.min(need, Math.max(0, room));
+  if (dy >= 2) map.panBy([0, -dy], { animate: false });
+}
 function frameTodayLeg() {
   if (frameLocked || !driveLatLngs.length) return;
   var today = easternDate(tripNow());
@@ -3357,8 +3466,15 @@ function frameTodayLeg() {
     if (stops[i].start === today) { dest = i; break; }
   }
   var phone = window.innerWidth <= 900;
-  var topPad = phone ? 108 : 50;
+  var topPad = phone ? 168 : 50;
   var bottomPad = phone ? 180 : 50;
+  if (phone) {
+    var countdown = document.getElementById('tminus');
+    if (countdown) {
+      var cardBottom = countdown.getBoundingClientRect().bottom;
+      if (cardBottom > 40) topPad = Math.ceil(cardBottom + 48);
+    }
+  }
   if (dest >= 0) {
     var origin = dest === 0 ? home : stops[dest - 1];
     var goal = stops[dest];
@@ -3371,7 +3487,10 @@ function frameTodayLeg() {
     var bounds = slice.length >= 2
       ? L.latLngBounds(slice)
       : L.latLngBounds([[originPt.lat, originPt.lon], [goalPt.lat, goalPt.lon]]);
+    bounds.extend([origin.lat, origin.lon]);
+    bounds.extend([goal.lat, goal.lon]);
     map.fitBounds(bounds, { paddingTopLeft: [28, topPad], paddingBottomRight: [28, bottomPad], animate: false });
+    keepStopsClearOfCountdown();
     return;
   }
   for (var j = 0; j < stops.length; j++) {
@@ -3379,6 +3498,7 @@ function frameTodayLeg() {
       var nxt = stops[j + 1];
       if (!nxt) {
         map.setView([stops[j].lat, stops[j].lon], phone ? 10 : 11, { animate: false });
+        keepStopsClearOfCountdown();
         return;
       }
       var fromPt = stops[j].leg || stops[j];
@@ -3393,13 +3513,18 @@ function frameTodayLeg() {
       stayBounds.extend([stops[j].lat, stops[j].lon]);
       stayBounds.extend([nxt.lat, nxt.lon]);
       map.fitBounds(stayBounds, { paddingTopLeft: [28, topPad], paddingBottomRight: [28, bottomPad], animate: false });
+      keepStopsClearOfCountdown();
       return;
     }
   }
   map.fitBounds(driveLine.getBounds(), { paddingTopLeft: [40, topPad], paddingBottomRight: [40, bottomPad], animate: false });
+  keepStopsClearOfCountdown();
 }
 frameTodayLeg();
 setTimeout(frameTodayLeg, 350);
+setTimeout(keepStopsClearOfCountdown, 900);
+setTimeout(keepStopsClearOfCountdown, 1800);
+window.__keepStopsClearOfCountdown = keepStopsClearOfCountdown;
 
 /* Past stays go grey. Today and the next stop stay at the top of the list. */
 function arrangeStopList() {
@@ -3652,14 +3777,33 @@ arrangeStopList();
     requestAnimationFrame(() => {
       measureCollapsed();
       try { map.invalidateSize({ animate:false }); } catch(e){}
+      separateLocateFromZoom();
     });
   }
+  function separateLocateFromZoom() {
+    var root = document.documentElement;
+    var btn = document.getElementById('btnLocate');
+    var zoom = document.querySelector('.leaflet-control-zoom');
+    if (!mq.matches || !btn || !zoom) {
+      root.classList.remove('locate-beside-zoom');
+      return;
+    }
+    root.classList.remove('locate-beside-zoom');
+    var a = btn.getBoundingClientRect();
+    var b = zoom.getBoundingClientRect();
+    var pad = 8;
+    var hit = a.width > 2 && b.width > 2 &&
+      a.left < b.right + pad && a.right > b.left - pad &&
+      a.top < b.bottom + pad && a.bottom > b.top - pad;
+    if (hit) root.classList.add('locate-beside-zoom');
+  }
+  window.__separateLocateFromZoom = separateLocateFromZoom;
   window.__setSheetHeight = (h) => apply(h, true);
 
   function syncDesktop(){
     if (!mq.matches) {
       document.documentElement.style.removeProperty('--sheet-h');
-      document.documentElement.classList.remove('controls-collapsed');
+      document.documentElement.classList.remove('controls-collapsed', 'locate-beside-zoom');
       aside.classList.remove('sheet-collapsed','sheet-dragging','layers-open');
       closeLayerSheet();
       return;
@@ -5503,8 +5647,12 @@ FOOD_POIS.forEach(p => {
     });
     renderStopLists(picked);
     if (window.__layoutCrowdedPins) {
-      setTimeout(window.__layoutCrowdedPins, 60);
-      setTimeout(window.__layoutCrowdedPins, 500);
+      [80, 520].forEach(function (ms) {
+        setTimeout(function () {
+          window.__layoutCrowdedPins();
+          if (window.__keepStopsClearOfCountdown) window.__keepStopsClearOfCountdown();
+        }, ms);
+      });
     }
     window.__gasDebug = {
       count: picked.length,
@@ -6384,7 +6532,7 @@ FOOD_POIS.forEach(p => {
 <script>
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', function () {
-    navigator.serviceWorker.register('sw.js?v=20261008-fixes').catch(function () {});
+    navigator.serviceWorker.register('sw.js?v=20261009-clusters').catch(function () {});
   });
 }
 </script>
